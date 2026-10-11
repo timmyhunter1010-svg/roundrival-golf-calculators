@@ -3,7 +3,7 @@ import type { View } from './round';
 import { SITE_URL } from '../config';
 
 const W = 1080, H = 1350;
-const strip = (html: string) => html.replace(/<[^>]+>/g, '');
+const strip = (html: string) => html.replace(/<br\/?>/g, ' ').replace(/<[^>]+>/g, '');
 
 function fit(ctx: CanvasRenderingContext2D, text: string, max: number, size: number, weight = 800) {
   let s = size;

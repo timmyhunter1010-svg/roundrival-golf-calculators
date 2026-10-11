@@ -146,12 +146,12 @@ h2 { font-size: 24px; letter-spacing: -.02em; margin: 0 0 14px; }
 .ctabar .btn { min-height: 44px; padding: 0 18px; font-size: 15px; }
 
 /* Hub */
-.grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+.grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
 @media (min-width: 640px) { .grid { grid-template-columns: 1fr 1fr; } }
-.calc-card { display: flex; align-items: center; justify-content: space-between; text-decoration: none; padding: 22px; min-height: 96px; transition: transform .2s var(--ease); }
+.calc-card { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-decoration: none; padding: 16px 18px; min-height: 76px; transition: transform .2s var(--ease); }
 .calc-card:hover { transform: translateY(-2px); }
-.calc-card b { display: block; font-size: 24px; letter-spacing: -.03em; color: var(--green-900); }
-.calc-card span { color: var(--muted); }
+.calc-card b { display: block; font-size: 21px; letter-spacing: -.03em; color: var(--green-900); }
+.calc-card span { color: var(--muted); font-size: 15px; }
 .calc-card i { font-style: normal; width: 40px; height: 40px; border-radius: 50%; background: var(--gold); display: grid; place-items: center; color: var(--green-900); font-weight: 800; flex: 0 0 auto; }
 
 /* FAQ / footer */
@@ -186,3 +186,27 @@ h2 { font-size: 24px; letter-spacing: -.02em; margin: 0 0 14px; }
 .chip small { opacity: .7; font-weight: 500; margin-left: 4px; }
 .attrib { font-size: 11px; color: #9aa29c; margin: 8px 0 0; }
 .attrib a { color: inherit; }
+
+.teamhead { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--green-800); padding: 14px 0 0; }
+.teamhead + .row { border-top: 0; }
+.group { margin: 28px 0 12px; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* Guides */
+.crumb { margin: 24px 0 -18px; font-size: 14px; font-weight: 600; }
+.crumb a { color: var(--green-800); text-decoration: none; }
+.glance { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 14px; }
+.glance div { background: var(--card); border-radius: 16px; padding: 12px; box-shadow: 0 1px 0 var(--line); }
+.glance span { display: block; font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.glance b { font-size: 17px; color: var(--green-900); }
+.guide { margin-top: 12px; }
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+.steps li { counter-increment: s; display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 18px; }
+.steps li:first-child { border-top: 0; }
+.steps li::before { content: counter(s); flex: 0 0 30px; height: 30px; border-radius: 50%; background: var(--gold); color: var(--green-900); font-weight: 800; display: grid; place-items: center; font-size: 15px; }
+.example p { margin: 0 0 8px; color: var(--muted); }
+.example .big { color: var(--green-900); font-size: 21px; font-weight: 700; letter-spacing: -.01em; margin: 0; }
+.guide-tips { margin-top: 28px; }
+.guide-tips ul { margin: 0; padding-left: 20px; }
+.guide-tips li { padding: 4px 0; }
+.howto { display: inline-block; margin: -12px 0 18px; font-weight: 600; color: var(--green-800); text-decoration: none; }
+.navlink { font-size: 15px; font-weight: 600; color: var(--green-800); text-decoration: none; }

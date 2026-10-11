@@ -1,0 +1,18 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AppCard from '../../components/AppCard.astro';
+import { GUIDES } from '../../content/guides';
+---
+<Layout title="How to Play Golf Games: Skins, Nassau, Wolf & More | RoundRival" description="Quick, simple rules for the most popular golf games: skins, Nassau, match play, best ball, Wolf, Stableford, Vegas, Bingo Bango Bongo, and scrambles." path="/how-to-play" page="guides">
+  <h1>How to play.</h1>
+  <p class="lede">Golf games in one minute each.</p>
+  <div class="grid">
+    {GUIDES.map((g) => (
+      <a class="card calc-card" href={`/how-to-play/${g.slug}`}>
+        <div><b>{g.game}</b><span>{g.lede}</span></div>
+        <i aria-hidden="true">→</i>
+      </a>
+    ))}
+  </div>
+  <AppCard page="guides" />
+</Layout>

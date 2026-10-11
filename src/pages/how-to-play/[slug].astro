@@ -1,0 +1,49 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AppCard from '../../components/AppCard.astro';
+import Faq from '../../components/Faq.astro';
+import { GUIDES, type Guide } from '../../content/guides';
+import { calcByKey } from '../../config';
+
+export function getStaticPaths() {
+  return GUIDES.map((g) => ({ params: { slug: g.slug }, props: { g } }));
+}
+const { g } = Astro.props as { g: Guide };
+const calc = calcByKey(g.calc)!;
+const others = GUIDES.filter((x) => x.slug !== g.slug);
+---
+<Layout title={`${g.title} | RoundRival`} description={g.description} path={`/how-to-play/${g.slug}`} page={`guide-${g.slug}`} faq={g.faq}>
+  <p class="crumb"><a href="/how-to-play">How to play</a></p>
+  <h1>{g.title}</h1>
+  <p class="lede">{g.lede}</p>
+
+  <div class="glance">
+    {g.glance.map(([k, v]) => (<div><span>{k}</span><b>{v}</b></div>))}
+  </div>
+
+  <section class="card guide">
+    <h2>How it works</h2>
+    <ol class="steps">{g.steps.map((s) => <li>{s}</li>)}</ol>
+  </section>
+
+  <section class="card guide example">
+    <p class="steplabel">Example</p>
+    <p>{g.example.setup}</p>
+    <p class="big">{g.example.result}</p>
+  </section>
+
+  <a class="btn btn-primary btn-block" style="margin-top:16px" href={`/${calc.slug}`}>Open the {calc.tab} calculator →</a>
+
+  <section class="guide-tips">
+    <h2>Tips</h2>
+    <ul>{g.tips.map((t) => <li>{t}</li>)}</ul>
+  </section>
+
+  <AppCard page={`guide-${g.slug}`} />
+  <Faq items={g.faq} />
+
+  <nav class="cross" aria-label="More guides">
+    {others.slice(0, 6).map((o) => <a class="btn btn-soft" href={`/how-to-play/${o.slug}`}>{o.game}</a>)}
+    <a class="btn btn-ghost" href="/how-to-play">All guides →</a>
+  </nav>
+</Layout>

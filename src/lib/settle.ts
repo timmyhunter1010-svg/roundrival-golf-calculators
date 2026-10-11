@@ -25,3 +25,9 @@ export function money(x: number): string {
   const v = Math.abs(cents(x));
   return '$' + (Number.isInteger(v) ? v.toString() : v.toFixed(2));
 }
+
+/** Points games: everyone settles the point difference with everyone else. */
+export function pairwise(points: number[], value: number): number[] {
+  const sum = points.reduce((a, b) => a + b, 0);
+  return points.map((p) => value * (points.length * p - sum) || 0);
+}

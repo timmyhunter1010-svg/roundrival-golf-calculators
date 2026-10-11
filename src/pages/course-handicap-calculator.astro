@@ -1,0 +1,76 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AppCard from '../components/AppCard.astro';
+import CoursePicker from '../components/CoursePicker.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How is Course Handicap calculated?', a: 'Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating − Par), rounded to the nearest whole number.' },
+  { q: 'Why is my Course Handicap different from my Handicap Index?', a: 'Your Index is for a course of average difficulty. Harder courses and longer tees have higher slope and rating, so you get more strokes.' },
+  { q: 'What is Playing Handicap?', a: 'Your Course Handicap times the allowance for the format, like 95% for individual stroke play or 90% for four-ball. At 100% they are the same.' },
+  { q: 'What is a plus handicap?', a: 'A Handicap Index better than zero. Enter it with a + (like +1.5). Plus players give strokes back to the course.' },
+];
+---
+<Layout title="Course Handicap Calculator (Any Course, Any Tee) | RoundRival" description="Free course handicap calculator. Search your course, enter your Handicap Index, and see your strokes from every tee." path="/course-handicap-calculator" page="coursehcp" faq={faq}>
+  <h1>Course Handicap Calculator</h1>
+  <p class="lede">Your strokes from every tee.</p>
+
+  <form id="game" class="card" onsubmit="return false">
+    <div class="row"><label for="idx">Handicap Index</label><input class="num" id="idx" name="idx" inputmode="decimal" value="12.4" autocomplete="off" /></div>
+    <CoursePicker />
+    <div class="chips" id="ctees" aria-label="Tees" hidden></div>
+    <details class="more">
+      <summary>Slope, rating, allowance</summary>
+      <div class="row"><label for="slope">Slope</label><input class="num" id="slope" name="slope" type="number" inputmode="numeric" value="113" /></div>
+      <div class="row"><label for="rating">Course rating</label><input class="num" id="rating" name="rating" type="number" inputmode="decimal" step="0.1" value="72.0" /></div>
+      <div class="row"><label for="coursePar">Par</label><input class="num" id="coursePar" name="coursePar" type="number" inputmode="numeric" value="72" /></div>
+      <div class="row"><label for="allowance">Allowance %</label><input class="num" id="allowance" name="allowance" type="number" inputmode="numeric" value="100" /></div>
+    </details>
+  </form>
+
+  <div class="card" style="margin-top:12px">
+    <div id="result" aria-live="polite"></div>
+    <div class="actions"><button type="button" class="btn btn-primary" id="share">Share</button></div>
+  </div>
+  <AppCard page="coursehcp" />
+
+  <Faq items={faq} />
+  <CrossLinks page="coursehcp" />
+</Layout>
+
+<script>
+  import { mountLive } from '../scripts/live';
+  import { mountCoursePicker } from '../scripts/coursePicker';
+  import { courseHandicap, playingHandicap } from '../lib/handicap';
+  import type { Course } from '../lib/course';
+
+  const form = document.querySelector<HTMLFormElement>('#game')!;
+  let course: Course | null = null;
+  mountCoursePicker(form, (c) => { course = c; });
+
+  const parseIndex = (v: unknown) => {
+    const t = String(v ?? '').trim();
+    const n = parseFloat(t.replace('+', ''));
+    return isFinite(n) ? (t.startsWith('+') ? -n : n) : 0;
+  };
+  const show = (n: number) => (n < 0 ? `+${-n}` : String(n));
+
+  mountLive(() => {
+    const el = (n: string) => (form.elements.namedItem(n) as HTMLInputElement).value;
+    const idx = parseIndex(el('idx'));
+    const allow = Number(el('allowance')) || 100;
+    const ph = (slope: number, rating: number, par: number) => playingHandicap(courseHandicap(idx, slope, rating, par), allow);
+    const main = ph(Number(el('slope')) || 113, Number(el('rating')) || 72, Number(el('coursePar')) || 72);
+    const tee = course?.tees.find((t) => t.slope === Number(el('slope')) && t.rating === Number(el('rating')));
+    return {
+      headline: `Course handicap <em>${show(main)}</em>`,
+      sub: tee ? `${course!.name} · ${tee.name} tees` : course ? course.name : `Index ${show(idx)} · slope ${el('slope')} · rating ${el('rating')}`,
+      lines: (course?.tees ?? []).map((t) => ({
+        label: `${t.name}${t.gender === 'Female' ? ' (W)' : ''} · ${t.rating}/${t.slope}`,
+        value: show(ph(t.slope, t.rating, t.par)),
+      })),
+      note: allow !== 100 ? `Includes ${allow}% allowance.` : undefined,
+    };
+  });
+</script>

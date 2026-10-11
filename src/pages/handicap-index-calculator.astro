@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AppCard from '../components/AppCard.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How is a Handicap Index calculated?', a: 'Each round gets a Score Differential: (113 ÷ Slope) × (Score − Course Rating). Your Index is the average of your best 8 differentials from your most recent 20 rounds.' },
+  { q: 'What if I have fewer than 20 rounds?', a: 'You need at least 3. With fewer rounds, fewer differentials count (for example, 3 rounds uses your best one, minus 2).' },
+  { q: 'Which score should I enter?', a: 'Your adjusted gross score: cap each hole at net double bogey (par + 2 + any strokes you get on that hole).' },
+  { q: 'Is this my official handicap?', a: 'No. It is an estimate using the World Handicap System formula. Your official Index comes from your golf association.' },
+];
+---
+<Layout title="Golf Handicap Calculator (Handicap Index from Scores) | RoundRival" description="Free golf handicap calculator. Enter your recent scores with course rating and slope to estimate your Handicap Index (WHS)." path="/handicap-index-calculator" page="index" faq={faq}>
+  <h1>Golf Handicap Calculator</h1>
+  <p class="lede">Your Handicap Index from your scores.</p>
+
+  <form id="game" class="card" onsubmit="return false">
+    <div class="row" style="min-height:0;padding:4px 0 0;border:0">
+      <span class="cap" style="flex:1">Round</span><span class="cap" style="width:74px;text-align:center">Score</span><span class="cap" style="width:74px;text-align:center">Rating</span><span class="cap" style="width:74px;text-align:center">Slope</span>
+    </div>
+    <div id="rounds"></div>
+    <div class="actions" style="margin-top:6px"><button type="button" class="link" id="addr">+ Add round</button></div>
+  </form>
+
+  <div class="card" style="margin-top:12px">
+    <div id="result" aria-live="polite"></div>
+    <div class="actions"><button type="button" class="btn btn-primary" id="share">Share</button></div>
+  </div>
+  <AppCard page="index" />
+
+  <Faq items={faq} />
+  <CrossLinks page="index" />
+</Layout>
+
+<style>
+  .rrow input { width: 74px; }
+</style>
+
+<script>
+  import { mountLive } from '../scripts/live';
+  import { differential, handicapIndex } from '../lib/handicapIndex';
+
+  const rounds = document.getElementById('rounds')!;
+  let n = 0;
+  const addRow = () => {
+    if (n >= 20) return;
+    const i = n++;
+    rounds.insertAdjacentHTML('beforeend', `
+      <div class="row rrow"><span class="lbl">${i + 1}</span>
+        <input class="num" name="s${i}" inputmode="numeric" placeholder="—" aria-label="Score ${i + 1}" />
+        <input class="num" name="r${i}" inputmode="decimal" placeholder="72.0" aria-label="Course rating ${i + 1}" />
+        <input class="num" name="l${i}" inputmode="numeric" placeholder="113" aria-label="Slope ${i + 1}" />
+      </div>`);
+    document.getElementById('addr')!.hidden = n >= 20;
+  };
+  for (let k = 0; k < 5; k++) addRow();
+  document.getElementById('addr')!.addEventListener('click', () => { addRow(); run(); });
+
+  const run = mountLive((s) => {
+    const diffs: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const score = Number(s[`s${i}`]);
+      if (!score) continue;
+      diffs.push(differential(score, Number(s[`r${i}`]) || 72, Number(s[`l${i}`]) || 113));
+    }
+    const res = handicapIndex(diffs);
+    if (!res) return { headline: `Add <em>${3 - diffs.length}</em> more round${3 - diffs.length === 1 ? '' : 's'}`, lines: [], note: 'At least 3 rounds needed.' };
+    const left = [...res.used];
+    const lines = diffs.map((d, i) => {
+      const at = left.indexOf(d);
+      const counts = at >= 0;
+      if (counts) left.splice(at, 1);
+      return { label: `Round ${i + 1}${counts ? ' · counts' : ''}`, value: d.toFixed(1), tone: counts ? ('pos' as const) : undefined };
+    });
+    const show = res.index < 0 ? `+${(-res.index).toFixed(1)}` : res.index.toFixed(1);
+    return { headline: `Handicap Index <em>${show}</em>`, sub: `Best ${res.used.length} of ${diffs.length}`, lines, note: 'Estimate. Official Index comes from your golf association.' };
+  });
+</script>

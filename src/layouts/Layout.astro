@@ -39,6 +39,7 @@ const faqLd = faq.length > 0 && JSON.stringify({
       <div class="wrap">
         <div class="brand">
           <a class="logo" href="/"><i></i>RoundRival <small>Calculators</small></a>
+          <a class="navlink" href="/how-to-play">How to play</a>
         </div>
         <nav class="tabs" aria-label="Calculators">
           {CALCS.map((c) => (
@@ -52,7 +53,7 @@ const faqLd = faq.length > 0 && JSON.stringify({
       <slot />
       <footer class="foot">
         <p>For friendly scorekeeping between friends. Nothing is paid or held here. Handicap rules vary by group.</p>
-        <p><a href="/">All calculators</a> · <a href={ctaUrl(page, 'footer')} data-cta="footer">RoundRival</a></p>
+        <p><a href="/">All calculators</a> · <a href="/how-to-play">How to play</a> · <a href={ctaUrl(page, 'footer')} data-cta="footer">RoundRival</a></p>
       </footer>
     </main>
 
@@ -65,6 +66,7 @@ const faqLd = faq.length > 0 && JSON.stringify({
 
     <script>
       import { track } from '../scripts/track';
+      document.querySelector('.tabs [aria-current="page"]')?.scrollIntoView({ inline: 'center', block: 'nearest' });
       document.addEventListener('click', (e) => {
         const a = (e.target as HTMLElement).closest<HTMLElement>('[data-cta]');
         if (a) track('Main Button Clicked', { spot: a.dataset.cta! });

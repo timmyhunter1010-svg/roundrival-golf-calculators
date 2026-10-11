@@ -1,0 +1,57 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RoundFlow from '../components/RoundFlow.astro';
+import HcpSettings from '../components/HcpSettings.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How does best ball work?', a: 'Two teams of two. Everyone plays their own ball, and each team takes its best (lowest) score on every hole.' },
+  { q: 'Match play or stroke play?', a: 'Match play compares team scores hole by hole. Stroke play adds up the team’s best scores for the round. Lowest total wins.' },
+  { q: 'What handicap allowance is used?', a: 'The common recommendation for four-ball match play is 90% of course handicap, off the lowest player. You can change it under Handicap options.' },
+];
+---
+<Layout title="Best Ball Golf Calculator (2 vs 2, with Handicaps) | RoundRival" description="Free best ball calculator for two-man teams. Net or gross, match or stroke play, and who owes who." path="/best-ball-calculator" page="bestball" faq={faq}>
+  <h1>Best Ball Golf Calculator</h1>
+  <p class="lede">Two vs two. Best score counts.</p>
+  <RoundFlow page="bestball">
+    <div class="row"><span class="lbl">Format</span>
+      <div class="seg" data-seg><input type="hidden" name="format" value="match" />
+        <button type="button" value="match">Match</button><button type="button" value="stroke">Stroke</button></div>
+    </div>
+    <div class="row"><label for="value">Per player</label><span class="money">$<input id="value" name="value" inputmode="decimal" value="10" /></span></div>
+    <HcpSettings allowance={90} />
+  </RoundFlow>
+  <Faq items={faq} />
+  <CrossLinks page="bestball" />
+</Layout>
+
+<script>
+  import { mountRound, nameOf } from '../scripts/round';
+  import { settleView } from '../scripts/results';
+  import { scoreBestBall } from '../lib/bestball';
+
+  mountRound({
+    min: 4, max: 4, start: 4, teams: true,
+    compute(r, s, hcps) {
+      const names = r.players.map((_, i) => nameOf(r, i));
+      const format = s.format === 'stroke' ? 'stroke' : 'match';
+      const res = scoreBestBall({ scores: r.scores, handicaps: hcps, strokeIndex: r.si, net: s.scoring === 'net', format });
+      const value = Number(s.value) || 0;
+      const teamA = `${names[0]} & ${names[1]}`, teamB = `${names[2]} & ${names[3]}`;
+      const totals = names.map((_, i) => res.winner * (i < 2 ? 1 : -1) * value || 0);
+      const v = settleView(names, totals);
+      const winTeam = res.winner > 0 ? teamA : teamB;
+      return {
+        headline: res.winner === 0 ? 'All square' : `${winTeam} win${format === 'match' ? ` <em>${res.match.score}</em>` : ''}`,
+        sub: v.headline !== 'All square' && value ? v.headline.replace(/<[^>]+>/g, '') + (v.sub ? ' · ' + v.sub : '') : undefined,
+        lines: [
+          { label: `${teamA} · best-ball total`, value: String(res.totals[0]) },
+          { label: `${teamB} · best-ball total`, value: String(res.totals[1]) },
+          ...(format === 'match' ? [{ label: 'Holes won', value: `${res.results.filter((x) => x > 0).length} – ${res.results.filter((x) => x < 0).length}` }] : []),
+          ...v.lines,
+        ],
+      };
+    },
+  });
+</script>

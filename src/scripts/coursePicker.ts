@@ -17,7 +17,7 @@ async function getJson(url: string, signal?: AbortSignal) {
 export function mountCoursePicker(form: HTMLFormElement, onPick: (c: Course | null) => void) {
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const q = $<HTMLInputElement>('cq'), res = $('cres'), search = $('csearch'), picked = $('cpicked');
-  const tees = $('ctees'), note = $('cnote');
+  const tees = document.getElementById('ctees'), note = $('cnote');
   let timer = 0, ctl: AbortController | null = null;
   let current: Course | null = null;
 
@@ -61,28 +61,30 @@ export function mountCoursePicker(form: HTMLFormElement, onPick: (c: Course | nu
     search.hidden = true; picked.hidden = false;
     $('cname').textContent = c.name;
     $('cplace').textContent = c.place;
-    tees.innerHTML = c.tees.map((t, i) => `<button type="button" class="chip" data-t="${i}" aria-pressed="false">${esc(t.name)}<small>${t.rating}/${t.slope}${t.gender === 'Female' ? ' · W' : ''}</small></button>`).join('');
-    tees.hidden = !c.tees.length;
+    if (tees) tees.innerHTML = c.tees.map((t, i) => `<button type="button" class="chip" data-t="${i}" aria-pressed="false">${esc(t.name)}<small>${t.rating}/${t.slope}${t.gender === 'Female' ? ' · W' : ''}</small></button>`).join('');
+    if (tees) tees.hidden = !c.tees.length;
     note.hidden = !!(c.par && c.si);
     note.textContent = !c.par ? 'No scorecard for this course yet. Using a standard card; edit par on each hole.'
       : 'No hole handicaps for this course. Using a standard order; edit on each hole.';
-    if (c.tees[0]) pickTee(c, 0);
     current = c;
     onPick(c);
+    if (c.tees[0]) pickTee(c, 0); else form.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   function pickTee(c: Course, i: number) {
     const t = c.tees[i];
-    tees.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i)));
+    tees?.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i)));
     setField('slope', t.slope); setField('rating', t.rating); setField('coursePar', t.par);
+    form.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  tees.addEventListener('click', (e) => {
+  tees?.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-t]');
     if (b && current) pickTee(current, +b.dataset.t!);
   });
 
   $('cchange').addEventListener('click', () => {
     picked.hidden = true; search.hidden = false; current = null; onPick(null); q.focus();
+    form.dispatchEvent(new Event('input', { bubbles: true }));
   });
 }

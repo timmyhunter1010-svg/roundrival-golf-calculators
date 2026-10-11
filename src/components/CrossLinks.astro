@@ -1,10 +1,14 @@
 ---
 import { CALCS } from '../config';
+import { guideFor } from '../content/guides';
 interface Props { page: string }
 const { page } = Astro.props;
+const guide = guideFor(page);
+const i = CALCS.findIndex((c) => c.key === page);
+const next = [1, 2, 3].map((k) => CALCS[(i + k) % CALCS.length]);
 ---
-<nav class="cross" aria-label="Other calculators">
-  {CALCS.filter((c) => c.key !== page).map((c) => (
-    <a class="btn btn-soft" href={`/${c.slug}`}>{c.tab} →</a>
-  ))}
+<nav class="cross" aria-label="More">
+  {guide && <a class="btn btn-gold" href={`/how-to-play/${guide.slug}`}>How to play {guide.game} →</a>}
+  {next.map((c) => <a class="btn btn-soft" href={`/${c.slug}`}>{c.tab} calculator</a>)}
+  <a class="btn btn-ghost" href="/">All calculators →</a>
 </nav>

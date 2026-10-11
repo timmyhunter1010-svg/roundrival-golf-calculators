@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RoundFlow from '../components/RoundFlow.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How does Bingo Bango Bongo work?', a: 'Three points on every hole. Bingo: first on the green. Bango: closest to the pin once everyone is on. Bongo: first in the hole.' },
+  { q: 'Who plays first?', a: 'The player farthest from the hole always plays first, so everyone gets a fair shot at the points.' },
+  { q: 'Why play it?', a: 'Every skill level can win points on every hole. A short hitter can still win Bango and Bongo.' },
+];
+---
+<Layout title="Bingo Bango Bongo Calculator | RoundRival" description="Free Bingo Bango Bongo calculator. Tap who won each point on every hole and see the final standings and settle-up." path="/bingo-bango-bongo-calculator" page="bbb" faq={faq}>
+  <h1>Bingo Bango Bongo Calculator</h1>
+  <p class="lede">Three points a hole. Tap the winners.</p>
+  <RoundFlow page="bbb" course={false}>
+    <div class="row"><label for="value">Per point</label><span class="money">$<input id="value" name="value" inputmode="decimal" value="1" /></span></div>
+    <div class="row"><span class="lbl">Holes</span>
+      <div class="seg" data-seg><input type="hidden" name="holes" value="18" />
+        <button type="button" value="18">18</button><button type="button" value="front">Front 9</button><button type="button" value="back">Back 9</button></div>
+    </div>
+  </RoundFlow>
+  <Faq items={faq} />
+  <CrossLinks page="bbb" />
+</Layout>
+
+<script>
+  import { mountRound, nameOf, esc } from '../scripts/round';
+  import { settleView } from '../scripts/results';
+  import { scoreBBB, type BBBHole } from '../lib/bbb';
+  import { pairwise } from '../lib/settle';
+
+  const awards: BBBHole[] = [];
+  const LABELS = ['Bingo · first on green', 'Bango · closest', 'Bongo · first in'];
+
+  mountRound({
+    min: 2, max: 6, start: 3, noScores: true,
+    holeExtra(r, h, el, redraw) {
+      awards[h] ??= [null, null, null];
+      el.innerHTML = LABELS.map((label, k) => `
+        <div class="row" style="flex-wrap:wrap"><span class="cap" style="width:100%;padding-top:8px">${label}</span>
+          <div class="chips" data-k="${k}">${r.players.map((_, p) => `<button type="button" class="chip" data-p="${p}" aria-pressed="${awards[h][k] === p}">${esc(nameOf(r, p))}</button>`).join('')}</div>
+        </div>`).join('');
+      el.querySelectorAll<HTMLElement>('.chips').forEach((c) => c.addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+        if (!b) return;
+        const k = +c.dataset.k!, p = +b.dataset.p!;
+        awards[h][k] = awards[h][k] === p ? null : p;
+        redraw();
+      }));
+    },
+    compute(r, s) {
+      const names = r.players.map((_, i) => nameOf(r, i));
+      const pts = scoreBBB(names.length, awards.slice(0, r.holes).map((a) => a ?? [null, null, null]));
+      const value = Number(s.value) || 0;
+      const v = settleView(names, pairwise(pts, value));
+      const order = names.map((_, i) => i).sort((a, b) => pts[b] - pts[a]);
+      const top = pts[order[0]];
+      const leaders = order.filter((i) => pts[i] === top);
+      return {
+        headline: leaders.length > 1 ? `Tie at <em>${top} pt${top === 1 ? "" : "s"}</em>` : `${names[leaders[0]]} wins <em>${top} pt${top === 1 ? "" : "s"}</em>`,
+        sub: value && v.headline !== 'All square' ? v.headline.replace(/<[^>]+>/g, '') + (v.sub ? ' · ' + v.sub : '') : undefined,
+        lines: order.map((i, rank) => ({ label: `${rank + 1}. ${names[i]}`, value: `${pts[i]} pt${pts[i] === 1 ? '' : 's'}` })),
+      };
+    },
+  });
+</script>

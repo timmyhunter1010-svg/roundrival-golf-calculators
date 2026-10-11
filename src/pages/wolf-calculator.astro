@@ -28,7 +28,7 @@ const faq = [
 </Layout>
 
 <script>
-  import { mountRound, nameOf } from '../scripts/round';
+  import { mountRound, nameOf, esc } from '../scripts/round';
   import { settleView } from '../scripts/results';
   import { scoreWolf, rotationWolf, type WolfPick } from '../lib/wolf';
 
@@ -46,10 +46,10 @@ const faq = [
         `<button type="button" class="chip${gold ? ' gold' : ''}" data-v="${val}" aria-pressed="${on}">${label}</button>`;
       el.innerHTML = `
         <div class="row" style="flex-wrap:wrap"><span class="cap" style="width:100%;padding-top:6px">Wolf</span>
-          <div class="chips" data-k="wolf">${r.players.map((_, p) => chip(String(p), nameOf(r, p), p === w)).join('')}</div></div>
+          <div class="chips" data-k="wolf">${r.players.map((_, p) => chip(String(p), esc(nameOf(r, p)), p === w)).join('')}</div></div>
         <div class="row" style="flex-wrap:wrap"><span class="cap" style="width:100%;padding-top:6px">Partner</span>
           <div class="chips" data-k="pick">
-            ${r.players.map((_, p) => (p === w ? '' : chip(String(p), nameOf(r, p), picks[h] === p))).join('')}
+            ${r.players.map((_, p) => (p === w ? '' : chip(String(p), esc(nameOf(r, p)), picks[h] === p))).join('')}
             ${chip('lone', 'Lone ×' + ((document.getElementById('lone') as HTMLInputElement).value || 2), picks[h] === 'lone', true)}
             ${chip('blind', 'Blind ×' + ((document.getElementById('blind') as HTMLInputElement).value || 3), picks[h] === 'blind', true)}
           </div></div>`;

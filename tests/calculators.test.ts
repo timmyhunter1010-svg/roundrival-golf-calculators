@@ -206,3 +206,112 @@ describe('course scorecards', () => {
     expect(layoutHoles(null, 'back').start).toBe(9);
   });
 });
+
+import { summarize, holeResults } from '../src/lib/match';
+import { stablefordPoints, scoreStableford } from '../src/lib/stableford';
+import { scoreBestBall } from '../src/lib/bestball';
+import { teamNumber, scoreVegas } from '../src/lib/vegas';
+import { scoreBBB } from '../src/lib/bbb';
+import { differential, handicapIndex } from '../src/lib/handicapIndex';
+import { pairwise } from '../src/lib/settle';
+
+describe('match play', () => {
+  it('3 & 2 when 3 up with 2 to play', () => {
+    const r = [1, 1, 0, 1, ...Array(12).fill(0), 0, 0];
+    expect(summarize(r)).toMatchObject({ up: 3, closedOn: 16, score: '3 & 2' });
+  });
+  it('goes the distance: 1 up, all square', () => {
+    expect(summarize([...Array(17).fill(0), 1]).score).toBe('1 up');
+    expect(summarize([1, -1, ...Array(16).fill(0)]).score).toBe('All square');
+  });
+  it('2 up on the last hole is "2 up", not "2 & 0"', () => {
+    expect(summarize([...Array(16).fill(0), 1, 1]).score).toBe('2 up');
+  });
+  it('9-hole match closed early', () => {
+    expect(summarize([-1, -1, -1, -1, -1, 0, 0, 0, 0])).toMatchObject({ up: -5, closedOn: 5, score: '5 & 4' });
+  });
+  it('net strokes off the low', () => {
+    const r = holeResults({ scores: [[4, 4], [5, 5]], handicaps: [10, 11], strokeIndex: [1, 2], net: true });
+    expect(r).toEqual([0, 1]);
+  });
+});
+
+describe('stableford', () => {
+  it('standard points', () => {
+    expect([-3, -2, -1, 0, 1, 2, 3].map((d) => stablefordPoints(d))).toEqual([5, 4, 3, 2, 1, 0, 0]);
+  });
+  it('modified points', () => {
+    expect([-3, -2, -1, 0, 1, 2, 4].map((d) => stablefordPoints(d, 'modified'))).toEqual([8, 5, 2, 0, -1, -3, -3]);
+  });
+  it('net: a stroke turns bogey into a net par', () => {
+    const r = scoreStableford({ scores: [[5, 4]], handicaps: [1], strokeIndex: [1, 2], par: [4, 4], net: true, kind: 'standard' });
+    expect(r.points).toEqual([4]);
+  });
+  it('points settle pairwise', () => {
+    expect(pairwise([36, 30, 30], 1)).toEqual([12, -6, -6]);
+    expect(pairwise([10, 10], 5)).toEqual([0, 0]);
+  });
+});
+
+describe('best ball', () => {
+  const si = [1, 2, 3];
+  it('match: team best ball each hole', () => {
+    const r = scoreBestBall({ scores: [[4, 5, 4], [5, 4, 5], [5, 5, 4], [5, 5, 5]], handicaps: [0, 0, 0, 0], strokeIndex: si, net: false, format: 'match' });
+    expect(r.teamScores).toEqual([[4, 4, 4], [5, 5, 4]]);
+    expect(r.match.score).toBe('2 & 1');
+    expect(r.winner).toBe(1);
+  });
+  it('stroke: lower team total wins; tie is 0', () => {
+    const r = scoreBestBall({ scores: [[4, 4], [4, 4], [4, 4], [4, 4]], handicaps: [0, 0, 0, 0], strokeIndex: [1, 2], net: false, format: 'stroke' });
+    expect(r.winner).toBe(0);
+  });
+  it('net off the low of all four', () => {
+    const card = (first: number) => [first, ...Array(17).fill(4)];
+    const r = scoreBestBall({ scores: [card(4), card(6), card(5), card(6)], handicaps: [2, 10, 3, 9], strokeIndex: SI18, net: true, format: 'match' });
+    // off the low: 0, 8, 1, 7 → one stroke each on SI 1 except the low man → A: min(4, 5) = 4, B: min(4, 5) = 4
+    expect(r.results[0]).toBe(0);
+  });
+});
+
+describe('vegas', () => {
+  it('team numbers', () => {
+    expect(teamNumber(5, 4, false)).toBe(45);
+    expect(teamNumber(4, 10, false)).toBe(104);
+    expect(teamNumber(4, 5, true)).toBe(54);
+    expect(teamNumber(4, 4, true)).toBe(44);
+  });
+  it('birdie flips the other team', () => {
+    const r = scoreVegas({ scores: [[3], [5], [4], [5]], par: [4], birdieFlip: true });
+    expect(r.holes[0]).toEqual({ a: 35, b: 54, diff: 19 });
+    const off = scoreVegas({ scores: [[3], [5], [4], [5]], par: [4], birdieFlip: false });
+    expect(off.net).toBe(10);
+  });
+});
+
+describe('bingo bango bongo', () => {
+  it('counts points, skips blanks', () => {
+    expect(scoreBBB(3, [[0, 1, 0], [2, null, 2], [1, 1, 1]])).toEqual([2, 4, 2]);
+  });
+});
+
+describe('handicap index (WHS)', () => {
+  it('differential', () => {
+    expect(differential(85, 72.1, 128)).toBe(11.4); // 113/128 × 12.9 = 11.39
+    expect(differential(70, 72.0, 113)).toBe(-2);
+  });
+  it('needs 3 rounds; 3 rounds = lowest 1 minus 2', () => {
+    expect(handicapIndex([10, 12])).toBeNull();
+    expect(handicapIndex([10, 12, 15])!.index).toBe(8);
+  });
+  it('20 rounds: average of lowest 8', () => {
+    const d = [5, 6, 7, 8, 9, 10, 11, 12, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20];
+    expect(handicapIndex(d)!.index).toBe(8.5);
+  });
+  it('only the most recent 20 count', () => {
+    const d = [0, ...Array(20).fill(10)];
+    expect(handicapIndex(d)!.index).toBe(10);
+  });
+  it('6 rounds: lowest 2 minus 1', () => {
+    expect(handicapIndex([10, 11, 20, 20, 20, 20])!.index).toBe(9.5);
+  });
+});

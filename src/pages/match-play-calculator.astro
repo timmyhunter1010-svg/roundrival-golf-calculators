@@ -1,0 +1,51 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RoundFlow from '../components/RoundFlow.astro';
+import HcpSettings from '../components/HcpSettings.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How does match play work?', a: 'You play hole by hole. Lower score wins the hole, a tie halves it. Whoever wins more holes wins the match.' },
+  { q: 'What does "3 & 2" mean?', a: 'The winner was 3 holes up with only 2 holes left, so the match ended early.' },
+  { q: 'How do handicaps work in match play?', a: 'Play off the low: the lower handicap plays at zero and the other player gets the difference, one stroke per hole starting with the hardest holes.' },
+];
+---
+<Layout title="Golf Match Play Calculator (with Handicaps) | RoundRival" description="Free golf match play calculator. Hole by hole with net strokes, shows the final result like 3 & 2 or 1 up." path="/match-play-calculator" page="match" faq={faq}>
+  <h1>Golf Match Play Calculator</h1>
+  <p class="lede">Hole by hole. Net strokes. Final score.</p>
+  <RoundFlow page="match">
+    <div class="row"><label for="value">Match</label><span class="money">$<input id="value" name="value" inputmode="decimal" value="0" /></span></div>
+    <HcpSettings />
+  </RoundFlow>
+  <Faq items={faq} />
+  <CrossLinks page="match" />
+</Layout>
+
+<script>
+  import { mountRound, nameOf } from '../scripts/round';
+  import { holeResults, summarize } from '../lib/match';
+  import { money } from '../lib/settle';
+
+  mountRound({
+    min: 2, max: 2, start: 2,
+    compute(r, s, hcps) {
+      const names = [nameOf(r, 0), nameOf(r, 1)];
+      const res = holeResults({ scores: r.scores, handicaps: hcps, strokeIndex: r.si, net: s.scoring === 'net' });
+      const m = summarize(res);
+      const value = Number(s.value) || 0;
+      const won = (p: number) => res.filter((x) => x === (p ? -1 : 1)).length;
+      const lead = m.up > 0 ? names[0] : names[1];
+      return {
+        headline: m.up === 0 ? 'All square' : `${lead} wins <em>${m.score}</em>`,
+        sub: m.up !== 0 && value ? `${m.up > 0 ? names[1] : names[0]} owes ${lead} ${money(value)}` : undefined,
+        lines: [
+          { label: `${names[0]} holes won`, value: String(won(0)) },
+          { label: `${names[1]} holes won`, value: String(won(1)) },
+          { label: 'Halved', value: String(res.filter((x) => x === 0).length) },
+          ...(m.closedOn ? [{ label: 'Match ended on', value: `Hole ${r.start + m.closedOn}` }] : []),
+        ],
+      };
+    },
+  });
+</script>

@@ -2,17 +2,33 @@
 import Layout from '../layouts/Layout.astro';
 import AppCard from '../components/AppCard.astro';
 import { CALCS } from '../config';
+import { GUIDES } from '../content/guides';
+
+const games = CALCS.filter((c) => c.group === 'games');
+const hcps = CALCS.filter((c) => c.group === 'handicaps');
 ---
-<Layout title="Golf Calculators: Skins, Nassau, Wolf, Scramble | RoundRival" description="Free golf calculators for skins, Nassau, Wolf, and scramble handicaps. Net or gross, who owes who, no sign-up." path="/" page="hub">
+<Layout title="Free Golf Calculators: Skins, Nassau, Wolf, Handicap & More | RoundRival" description="Free golf calculators for skins, Nassau, match play, best ball, Wolf, Stableford, Vegas, scramble, and handicaps. Net or gross, who owes who, no sign-up." path="/" page="hub">
   <h1>Golf calculators.</h1>
   <p class="lede">Free. No sign-up. Done in seconds.</p>
+
+  <p class="group">Games</p>
   <div class="grid">
-    {CALCS.map((c) => (
-      <a class="card calc-card" href={`/${c.slug}`}>
-        <div><b>{c.tab}</b><span>{c.blurb}</span></div>
-        <i aria-hidden="true">→</i>
-      </a>
+    {games.map((c) => (
+      <a class="card calc-card" href={`/${c.slug}`}><div><b>{c.tab}</b><span>{c.blurb}</span></div><i aria-hidden="true">→</i></a>
     ))}
   </div>
+
+  <p class="group">Handicaps</p>
+  <div class="grid">
+    {hcps.map((c) => (
+      <a class="card calc-card" href={`/${c.slug}`}><div><b>{c.tab}</b><span>{c.blurb}</span></div><i aria-hidden="true">→</i></a>
+    ))}
+  </div>
+
   <AppCard page="hub" />
+
+  <p class="group">How to play</p>
+  <nav class="cross" style="margin-top:0" aria-label="Guides">
+    {GUIDES.map((g) => <a class="btn btn-soft" href={`/how-to-play/${g.slug}`}>{g.game}</a>)}
+  </nav>
 </Layout>

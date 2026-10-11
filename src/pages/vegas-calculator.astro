@@ -1,0 +1,54 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RoundFlow from '../components/RoundFlow.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How does Vegas work in golf?', a: 'Two teams of two. On each hole, each team puts its two scores together, low number first: a 4 and a 5 make 45. The lower team number wins the difference in points.' },
+  { q: 'What if someone makes 10 or more?', a: 'The big number goes first. A 4 and a 10 make 104, so blow-ups hurt.' },
+  { q: 'What is the birdie flip?', a: 'If one team makes a birdie, the other team’s number is flipped high first: their 4 and 5 become 54.' },
+  { q: 'How do points turn into money?', a: 'Multiply the final point difference by the value per point. Each player on the losing team settles with one player on the winning team.' },
+];
+---
+<Layout title="Vegas Golf Game Calculator (Birdie Flip) | RoundRival" description="Free Vegas golf calculator for two-man teams. Team numbers, birdie flip, and the final point difference." path="/vegas-calculator" page="vegas" faq={faq}>
+  <h1>Vegas Golf Calculator</h1>
+  <p class="lede">Team numbers. Birdie flip. Final tally.</p>
+  <RoundFlow page="vegas">
+    <div class="row"><label for="value">Per point</label><span class="money">$<input id="value" name="value" inputmode="decimal" value="0.25" /></span></div>
+    <div class="row"><label for="flip">Birdie flip</label><span class="switch"><input type="checkbox" id="flip" name="flip" checked /><span></span></span></div>
+    <div class="row"><span class="lbl">Holes</span>
+      <div class="seg" data-seg><input type="hidden" name="holes" value="18" />
+        <button type="button" value="18">18</button><button type="button" value="front">Front 9</button><button type="button" value="back">Back 9</button></div>
+    </div>
+  </RoundFlow>
+  <Faq items={faq} />
+  <CrossLinks page="vegas" />
+</Layout>
+
+<script>
+  import { mountRound, nameOf } from '../scripts/round';
+  import { settleView } from '../scripts/results';
+  import { scoreVegas } from '../lib/vegas';
+
+  mountRound({
+    min: 4, max: 4, start: 4, teams: true,
+    compute(r, s) {
+      const names = r.players.map((_, i) => nameOf(r, i));
+      const res = scoreVegas({ scores: r.scores, par: r.par, birdieFlip: !!s.flip });
+      const value = Number(s.value) || 0;
+      const totals = names.map((_, i) => (i < 2 ? 1 : -1) * res.net * value);
+      const v = settleView(names, totals);
+      const teamA = `${names[0]} & ${names[1]}`, teamB = `${names[2]} & ${names[3]}`;
+      return {
+        headline: res.net === 0 ? 'All square' : `${res.net > 0 ? teamA : teamB} <em>+${Math.abs(res.net)} pts</em>`,
+        sub: value && v.headline !== 'All square' ? v.headline.replace(/<[^>]+>/g, '') + (v.sub ? ' · ' + v.sub : '') : undefined,
+        lines: res.holes.map((h, i) => ({
+          label: `Hole ${r.start + i + 1} · ${h.a} vs ${h.b}`,
+          value: h.diff === 0 ? 'Push' : `${h.diff > 0 ? 'A' : 'B'} +${Math.abs(h.diff)}`,
+          tone: h.diff > 0 ? 'pos' : h.diff < 0 ? 'neg' : undefined,
+        })),
+      };
+    },
+  });
+</script>

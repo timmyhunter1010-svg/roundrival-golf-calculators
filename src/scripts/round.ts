@@ -17,13 +17,17 @@ export interface Options {
   max: number;
   start: number;
   fixedHoles?: number;
+  /** Players 1 & 2 vs 3 & 4. */
+  teams?: boolean;
+  /** Holes without strokes (Bingo Bango Bongo): only the per-hole extras. */
+  noScores?: boolean;
   compute(r: Round, s: Settings, hcps: number[]): View;
   /** Extra per-hole controls (wolf picks). */
   holeExtra?(r: Round, h: number, el: HTMLElement, redraw: () => void): void;
 }
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel)!;
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+export const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 export const nameOf = (r: Round, i: number) => r.players[i].name.trim() || `Player ${i + 1}`;
 const showHcp = (h: number) => (h < 0 ? '+' + Math.abs(h) : String(h));
 const parseHcp = (s: string) => {
@@ -74,9 +78,12 @@ export function initSegs(root: ParentNode = document) {
   });
 }
 
+/** Headlines may use <em> and <br/>; everything else (player names) is escaped. */
+export const safeHeadline = (h: string) => esc(h).replace(/&lt;(\/?em|br\/?)&gt;/g, '<$1>');
+
 export function renderView(el: HTMLElement, v: View) {
   el.innerHTML = `
-    <div class="result-big">${v.headline}</div>
+    <div class="result-big">${safeHeadline(v.headline)}</div>
     ${v.sub ? `<p class="result-sub">${esc(v.sub)}</p>` : ''}
     <ul class="lines">${v.lines.map((l) => `<li><span>${esc(l.label)}</span><b class="${l.tone ?? ''}">${esc(l.value)}</b></li>`).join('')}</ul>
     ${v.note ? `<p class="note">${esc(v.note)}</p>` : ''}`;
@@ -90,7 +97,7 @@ export function mountRound(o: Options) {
     holes: 18, par: [], si: [], scores: [], hole: 0, touched: [], start: 0, key: '',
   };
   let course: Course | null = null;
-  mountCoursePicker(form, (c) => { course = c; });
+  if (document.getElementById('cq')) mountCoursePicker(form, (c) => { course = c; });
   let step = 0;
   let view: View | null = null;
   initSegs(form);
@@ -110,6 +117,7 @@ export function mountRound(o: Options) {
   const list = $('#players');
   const drawPlayers = () => {
     list.innerHTML = r.players.map((p, i) => `
+      ${o.teams && i % 2 === 0 ? `<div class="teamhead">Team ${i ? 'B' : 'A'}</div>` : ''}
       <div class="row">
         <div class="grow"><input class="name" data-i="${i}" placeholder="Player ${i + 1}" value="${esc(p.name)}" autocomplete="off" enterkeyhint="next" maxlength="16" /></div>
         <div><div class="cap" style="text-align:center">Hcp</div>
@@ -159,12 +167,13 @@ export function mountRound(o: Options) {
     holeEl.innerHTML = `
       <div class="holehead">
         <div class="holeno">${r.start + h + 1}<small> ${r.holes === 9 ? `· ${h + 1} of 9` : '/ 18'}</small></div>
-        <div class="holemeta">
+        <div class="holemeta"${o.noScores ? ' hidden' : ''}>
           <div><div class="cap">Par</div><div class="stepper sm"><button type="button" data-meta="par" data-d="-1" aria-label="Lower par">−</button><span class="val">${r.par[h]}</span><button type="button" data-meta="par" data-d="1" aria-label="Raise par">+</button></div></div>
           <div><div class="cap">Hcp</div><div class="stepper sm"><button type="button" data-meta="si" data-d="-1" aria-label="Lower hole handicap">−</button><span class="val">${r.si[h]}</span><button type="button" data-meta="si" data-d="1" aria-label="Raise hole handicap">+</button></div></div>
         </div>
       </div>
-      ${r.players.map((_, p) => `
+      ${o.noScores ? '' : r.players.map((_, p) => `
+        ${o.teams && p % 2 === 0 ? `<div class="teamhead">Team ${p ? 'B' : 'A'}</div>` : ''}
         <div class="row"><span class="lbl">${esc(nameOf(r, p))}</span>
           <div class="stepper"><button type="button" data-p="${p}" data-d="-1" aria-label="Lower score">−</button><span class="val">${r.scores[p][h]}</span><button type="button" data-p="${p}" data-d="1" aria-label="Raise score">+</button></div>
         </div>`).join('')}

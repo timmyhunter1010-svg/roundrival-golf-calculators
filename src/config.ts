@@ -25,8 +25,17 @@ export function ctaUrl(page: string, spot: string): string {
 }
 
 export const CALCS = [
-  { slug: 'skins-calculator', key: 'skins', tab: 'Skins', title: 'Golf Skins Calculator (with Handicaps)', blurb: 'Gross or net. Carryovers.' },
-  { slug: 'nassau-calculator', key: 'nassau', tab: 'Nassau', title: 'Golf Nassau Calculator (with Handicaps)', blurb: 'Front, back, overall.' },
-  { slug: 'wolf-calculator', key: 'wolf', tab: 'Wolf', title: 'Golf Wolf Calculator', blurb: 'Lone and blind wolf.' },
-  { slug: 'scramble-calculator', key: 'scramble', tab: 'Scramble', title: 'Golf Scramble Handicap Calculator', blurb: 'Team handicap, USGA %.' },
+  { slug: 'skins-calculator', key: 'skins', tab: 'Skins', group: 'games', title: 'Golf Skins Calculator (with Handicaps)', blurb: 'Gross or net. Carryovers.' },
+  { slug: 'nassau-calculator', key: 'nassau', tab: 'Nassau', group: 'games', title: 'Golf Nassau Calculator (with Handicaps)', blurb: 'Front, back, overall.' },
+  { slug: 'match-play-calculator', key: 'match', tab: 'Match Play', group: 'games', title: 'Golf Match Play Calculator', blurb: 'Hole by hole. 3 & 2.' },
+  { slug: 'best-ball-calculator', key: 'bestball', tab: 'Best Ball', group: 'games', title: 'Best Ball Golf Calculator (2 vs 2)', blurb: 'Two-man teams. Net.' },
+  { slug: 'wolf-calculator', key: 'wolf', tab: 'Wolf', group: 'games', title: 'Golf Wolf Calculator', blurb: 'Lone and blind wolf.' },
+  { slug: 'stableford-calculator', key: 'stableford', tab: 'Stableford', group: 'games', title: 'Stableford Calculator (Golf Points)', blurb: 'Points per hole.' },
+  { slug: 'vegas-calculator', key: 'vegas', tab: 'Vegas', group: 'games', title: 'Vegas Golf Game Calculator', blurb: 'Team numbers. Birdie flip.' },
+  { slug: 'bingo-bango-bongo-calculator', key: 'bbb', tab: 'Bingo Bango Bongo', group: 'games', title: 'Bingo Bango Bongo Calculator', blurb: '3 points a hole.' },
+  { slug: 'scramble-calculator', key: 'scramble', tab: 'Scramble', group: 'handicaps', title: 'Golf Scramble Handicap Calculator', blurb: 'Team handicap, USGA %.' },
+  { slug: 'course-handicap-calculator', key: 'coursehcp', tab: 'Course Handicap', group: 'handicaps', title: 'Course Handicap Calculator', blurb: 'Strokes from any tee.' },
+  { slug: 'handicap-index-calculator', key: 'index', tab: 'Handicap Index', group: 'handicaps', title: 'Golf Handicap Calculator (Handicap Index)', blurb: 'From your recent scores.' },
 ] as const;
+
+export const calcByKey = (key: string) => CALCS.find((c) => c.key === key);

@@ -1,0 +1,52 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RoundFlow from '../components/RoundFlow.astro';
+import HcpSettings from '../components/HcpSettings.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How are Stableford points scored?', a: 'Standard: double bogey or worse 0, bogey 1, par 2, birdie 3, eagle 4, albatross 5. Most points wins.' },
+  { q: 'What is Modified Stableford?', a: 'A more aggressive version: double bogey or worse −3, bogey −1, par 0, birdie 2, eagle 5, albatross 8.' },
+  { q: 'Net or gross?', a: 'Net Stableford uses each player’s full handicap strokes, so a net par is worth 2 points even if the actual score was a bogey.' },
+];
+---
+<Layout title="Stableford Calculator (Golf Points, Net or Gross) | RoundRival" description="Free Stableford calculator. Standard or modified points, net or gross, with a leaderboard and optional settle-up." path="/stableford-calculator" page="stableford" faq={faq}>
+  <h1>Stableford Calculator</h1>
+  <p class="lede">Points per hole. Most points wins.</p>
+  <RoundFlow page="stableford">
+    <div class="row"><span class="lbl">Points</span>
+      <div class="seg" data-seg><input type="hidden" name="kind" value="standard" />
+        <button type="button" value="standard">Standard</button><button type="button" value="modified">Modified</button></div>
+    </div>
+    <div class="row"><label for="value">Per point</label><span class="money">$<input id="value" name="value" inputmode="decimal" value="0" /></span></div>
+    <HcpSettings />
+  </RoundFlow>
+  <Faq items={faq} />
+  <CrossLinks page="stableford" />
+</Layout>
+
+<script>
+  import { mountRound, nameOf } from '../scripts/round';
+  import { settleView } from '../scripts/results';
+  import { scoreStableford } from '../lib/stableford';
+  import { pairwise } from '../lib/settle';
+
+  mountRound({
+    min: 1, max: 8, start: 4,
+    compute(r, s, hcps) {
+      const names = r.players.map((_, i) => nameOf(r, i));
+      const res = scoreStableford({ scores: r.scores, handicaps: hcps, strokeIndex: r.si, par: r.par, net: s.scoring === 'net', kind: s.kind === 'modified' ? 'modified' : 'standard' });
+      const order = names.map((_, i) => i).sort((a, b) => res.points[b] - res.points[a]);
+      const top = res.points[order[0]];
+      const leaders = order.filter((i) => res.points[i] === top);
+      const value = Number(s.value) || 0;
+      const v = value && names.length > 1 ? settleView(names, pairwise(res.points, value)) : null;
+      return {
+        headline: leaders.length > 1 ? `Tie at <em>${top} pt${top === 1 ? "" : "s"}</em>` : `${names[leaders[0]]} wins <em>${top} pt${top === 1 ? "" : "s"}</em>`,
+        sub: v && v.headline !== 'All square' ? v.headline.replace(/<[^>]+>/g, '') + (v.sub ? ' · ' + v.sub : '') : undefined,
+        lines: order.map((i, rank) => ({ label: `${rank + 1}. ${names[i]}`, value: `${res.points[i]} pt${res.points[i] === 1 ? '' : 's'}` })),
+      };
+    },
+  });
+</script>

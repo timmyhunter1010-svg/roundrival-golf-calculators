@@ -2,12 +2,10 @@
 import { settle, money } from '../lib/settle';
 import type { Line } from './round';
 
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-
 export function settleView(names: string[], totals: number[]) {
   const t = settle(totals);
   const headline = t.length
-    ? `${esc(names[t[0].from])} owes ${esc(names[t[0].to])} <em>${money(t[0].amount)}</em>`
+    ? `${names[t[0].from]} owes ${names[t[0].to]} <em>${money(t[0].amount)}</em>`
     : 'All square';
   const extra = t.slice(1).map((x) => `${names[x.from]} owes ${names[x.to]} ${money(x.amount)}`);
   const lines: Line[] = names.map((n, i) => ({

@@ -1,4 +1,5 @@
-import { netScore, offTheLow } from './handicap';
+import { holeResults } from './match';
+export { holeResults };
 
 export interface NassauInput {
   /** Two players, 18 gross scores each. */
@@ -11,16 +12,6 @@ export interface NassauInput {
 
 export interface NassauBet { label: string; status: number; stake: number; result: number }
 export interface NassauResult { holeResults: number[]; bets: NassauBet[]; totals: [number, number] }
-
-/** +1 = player 1 wins the hole, −1 = player 2, 0 = halved. Strokes off the low. */
-export function holeResults(inp: Pick<NassauInput, 'scores' | 'handicaps' | 'strokeIndex' | 'net'>): number[] {
-  const hc = offTheLow(inp.handicaps);
-  return inp.strokeIndex.map((si, h) => {
-    const [a, b] = inp.scores.map((row, p) =>
-      inp.net ? netScore(row[h], hc[p], si, inp.strokeIndex) : row[h]);
-    return a < b ? 1 : a > b ? -1 : 0;
-  });
-}
 
 /** Three matches: front 9, back 9, overall 18. Each is won by whoever wins more holes. */
 export function scoreNassau(inp: NassauInput): NassauResult {
