@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RoundFlow from '../components/RoundFlow.astro';
+import HcpSettings from '../components/HcpSettings.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How does Wolf work?', a: 'Players take turns being the Wolf. After each tee shot, the Wolf can pick that player as a partner. Best ball wins the hole: Wolf and partner against the rest.' },
+  { q: 'What is a Lone Wolf?', a: 'The Wolf plays alone against everyone else. Win and every other player pays the Wolf. Lose and the Wolf pays everyone. The default is double points.' },
+  { q: 'What is a Blind Wolf?', a: 'The Wolf goes alone before anyone hits, even the Wolf. It is the biggest risk, so it pays the most. The default is triple points.' },
+  { q: 'How are points paid?', a: 'On each hole, every player on the losing side pays every player on the winning side one point times the multiplier. Ties are a push.' },
+];
+---
+<Layout title="Golf Wolf Calculator | RoundRival" description="Free golf Wolf calculator for 3 or 4 players. Lone wolf, blind wolf, points per hole, and the final settle-up." path="/wolf-calculator" page="wolf" faq={faq}>
+  <h1>Golf Wolf Calculator</h1>
+  <p class="lede">Lone wolf. Blind wolf. Final tally.</p>
+
+  <RoundFlow page="wolf">
+    <div class="row"><label for="value">Per point</label><span class="money">$<input id="value" name="value" inputmode="decimal" value="1" /></span></div>
+    <div class="row"><label for="lone">Lone wolf ×</label><input class="num" id="lone" name="lone" type="number" inputmode="numeric" value="2" min="1" /></div>
+    <div class="row"><label for="blind">Blind wolf ×</label><input class="num" id="blind" name="blind" type="number" inputmode="numeric" value="3" min="1" /></div>
+    <HcpSettings net={false} />
+  </RoundFlow>
+
+  <Faq items={faq} />
+  <CrossLinks page="wolf" />
+</Layout>
+
+<script>
+  import { mountRound, nameOf } from '../scripts/round';
+  import { settleView } from '../scripts/results';
+  import { scoreWolf, rotationWolf, type WolfPick } from '../lib/wolf';
+
+  const picks: (WolfPick | null)[] = [];
+  const wolves: number[] = [];
+
+  mountRound({
+    min: 3, max: 4, start: 4,
+    holeExtra(r, h, el, redraw) {
+      const n = r.players.length;
+      if (wolves[h] == null || wolves[h] >= n) wolves[h] = rotationWolf(h, n);
+      const w = wolves[h];
+      if (typeof picks[h] === 'number' && (picks[h] === w || (picks[h] as number) >= n)) picks[h] = null;
+      const chip = (val: string, label: string, on: boolean, gold = false) =>
+        `<button type="button" class="chip${gold ? ' gold' : ''}" data-v="${val}" aria-pressed="${on}">${label}</button>`;
+      el.innerHTML = `
+        <div class="row" style="flex-wrap:wrap"><span class="cap" style="width:100%;padding-top:6px">Wolf</span>
+          <div class="chips" data-k="wolf">${r.players.map((_, p) => chip(String(p), nameOf(r, p), p === w)).join('')}</div></div>
+        <div class="row" style="flex-wrap:wrap"><span class="cap" style="width:100%;padding-top:6px">Partner</span>
+          <div class="chips" data-k="pick">
+            ${r.players.map((_, p) => (p === w ? '' : chip(String(p), nameOf(r, p), picks[h] === p))).join('')}
+            ${chip('lone', 'Lone ×' + ((document.getElementById('lone') as HTMLInputElement).value || 2), picks[h] === 'lone', true)}
+            ${chip('blind', 'Blind ×' + ((document.getElementById('blind') as HTMLInputElement).value || 3), picks[h] === 'blind', true)}
+          </div></div>`;
+      el.querySelectorAll<HTMLElement>('.chips').forEach((c) => c.addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+        if (!b) return;
+        const v = b.dataset.v!;
+        if (c.dataset.k === 'wolf') wolves[h] = +v;
+        else picks[h] = v === 'lone' || v === 'blind' ? v : +v;
+        redraw();
+      }));
+    },
+    compute(r, s, hcps) {
+      const n = r.players.length;
+      const holes = r.si.map((_, h) => ({ wolf: wolves[h] ?? rotationWolf(h, n), pick: picks[h] ?? null }));
+      const res = scoreWolf({
+        scores: r.scores, handicaps: hcps, strokeIndex: r.si, net: s.scoring === 'net', holes,
+        pointValue: Number(s.value) || 0, loneMult: Number(s.lone) || 2, blindMult: Number(s.blind) || 3,
+      });
+      const names = r.players.map((_, i) => nameOf(r, i));
+      const v = settleView(names, res.totals);
+      v.lines = v.lines.map((l, i) => ({ ...l, label: `${l.label} · ${res.points[i] > 0 ? '+' : res.points[i] < 0 ? '−' : ''}${Math.abs(res.points[i])} pts` }));
+      const skipped = res.holes.filter((x) => x.winner === 'skipped').length;
+      return { ...v, note: skipped ? `${skipped} hole${skipped > 1 ? 's' : ''} with no partner picked didn't count.` : undefined };
+    },
+  });
+</script>

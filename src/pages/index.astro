@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AppCard from '../components/AppCard.astro';
+import { CALCS } from '../config';
+---
+<Layout title="Golf Calculators: Skins, Nassau, Wolf, Scramble | RoundRival" description="Free golf calculators for skins, Nassau, Wolf, and scramble handicaps. Net or gross, who owes who, no sign-up." path="/" page="hub">
+  <h1>Golf calculators.</h1>
+  <p class="lede">Free. No sign-up. Done in seconds.</p>
+  <div class="grid">
+    {CALCS.map((c) => (
+      <a class="card calc-card" href={`/${c.slug}`}>
+        <div><b>{c.tab}</b><span>{c.blurb}</span></div>
+        <i aria-hidden="true">→</i>
+      </a>
+    ))}
+  </div>
+  <AppCard page="hub" />
+</Layout>

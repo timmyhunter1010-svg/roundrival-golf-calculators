@@ -26,8 +26,7 @@ export function ctaUrl(page: string, spot: string): string {
 
 export const CALCS = [
   { slug: 'skins-calculator', key: 'skins', tab: 'Skins', title: 'Golf Skins Calculator (with Handicaps)', blurb: 'Gross or net. Carryovers.' },
-  { slug: 'nassau-calculator', key: 'nassau', tab: 'Nassau', title: 'Golf Nassau Calculator (with Presses)', blurb: 'Front, back, overall.' },
-  { slug: 'press-calculator', key: 'press', tab: 'Press', title: 'Golf Press Calculator', blurb: 'Should you press?' },
+  { slug: 'nassau-calculator', key: 'nassau', tab: 'Nassau', title: 'Golf Nassau Calculator (with Handicaps)', blurb: 'Front, back, overall.' },
   { slug: 'wolf-calculator', key: 'wolf', tab: 'Wolf', title: 'Golf Wolf Calculator', blurb: 'Lone and blind wolf.' },
   { slug: 'scramble-calculator', key: 'scramble', tab: 'Scramble', title: 'Golf Scramble Handicap Calculator', blurb: 'Team handicap, USGA %.' },
 ] as const;

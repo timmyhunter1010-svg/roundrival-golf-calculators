@@ -1,0 +1,77 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AppCard from '../components/AppCard.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'How is a scramble team handicap calculated?', a: 'Sort the team from lowest to highest course handicap, take a percentage of each, and add them up. The calculator uses the USGA-recommended percentages by default.' },
+  { q: 'What are the USGA scramble percentages?', a: '2-person: 35% of the low and 15% of the high. 3-person: 20%, 15%, 10%. 4-person: 25%, 20%, 15%, 10%. Events can set their own.' },
+  { q: 'Should I use Handicap Index or Course Handicap?', a: 'Use Course Handicap, the strokes you get on that course from those tees. You can find it on the course handicap chart or in your handicap app.' },
+  { q: 'What about plus handicaps?', a: 'A plus handicap counts as a negative number, so it lowers the team handicap.' },
+];
+---
+<Layout title="Golf Scramble Handicap Calculator (USGA %) | RoundRival" description="Free scramble handicap calculator for 2, 3, or 4-person teams using USGA-recommended percentages. Team handicap and net score in seconds." path="/scramble-calculator" page="scramble" faq={faq}>
+  <h1>Golf Scramble Handicap Calculator</h1>
+  <p class="lede">Team handicap in seconds.</p>
+
+  <form id="game" class="card" onsubmit="return false">
+    <div class="row"><span class="lbl">Team</span>
+      <div class="seg" data-seg><input type="hidden" name="size" id="size" value="4" />
+        <button type="button" value="2">2</button><button type="button" value="3">3</button><button type="button" value="4">4</button></div>
+    </div>
+    <div class="row" style="min-height:0;padding:10px 0 0;border:0"><span class="lbl"></span><span class="cap" style="width:120px;text-align:center">Hcp</span><span class="cap" style="width:84px;text-align:center">%</span></div>
+    {[0, 1, 2, 3].map((i) => (
+      <div class="row" data-player={i}>
+        <span class="lbl">Player {i + 1}</span>
+        <div class="stepper sm" data-stepper>
+          <button type="button" data-d="-1" aria-label={`Lower handicap ${i + 1}`}>−</button>
+          <input class="val" name={`h${i}`} inputmode="decimal" value={[4, 10, 16, 22][i]} data-min="-10" data-max="54" aria-label={`Handicap ${i + 1}`} />
+          <button type="button" data-d="1" aria-label={`Raise handicap ${i + 1}`}>+</button>
+        </div>
+        <input class="num" style="width:64px" name={`p${i}`} inputmode="decimal" aria-label={`Percent for ${i + 1}th lowest`} />
+        <span class="cap">%</span>
+      </div>
+    ))}
+    <div class="row"><label for="gross">Team score <span class="cap">optional</span></label><input class="num" id="gross" name="gross" inputmode="numeric" placeholder="—" /></div>
+    <p class="note">% by rank, low to high. USGA defaults.</p>
+  </form>
+
+  <div class="card" style="margin-top:12px">
+    <div id="result" aria-live="polite"></div>
+    <div class="actions"><button type="button" class="btn btn-primary" id="share">Share</button></div>
+  </div>
+  <AppCard page="scramble" />
+
+  <Faq items={faq} />
+  <CrossLinks page="scramble" />
+</Layout>
+
+<script>
+  import { mountLive } from '../scripts/live';
+  import { scrambleHandicap, SCRAMBLE_DEFAULTS } from '../lib/scramble';
+
+  const form = document.querySelector<HTMLFormElement>('#game')!;
+  const pct = (i: number) => form.querySelector<HTMLInputElement>(`[name=p${i}]`)!;
+  const applySize = () => {
+    const n = Number((form.querySelector('#size') as HTMLInputElement).value);
+    form.querySelectorAll<HTMLElement>('[data-player]').forEach((row) => { row.hidden = +row.dataset.player! >= n; });
+    SCRAMBLE_DEFAULTS[n].forEach((p, i) => (pct(i).value = String(p)));
+  };
+  applySize();
+  form.querySelector('#size')!.addEventListener('change', applySize);
+
+  mountLive((s) => {
+    const n = Number(s.size) || 4;
+    const hcps = Array.from({ length: n }, (_, i) => Number(s[`h${i}`]) || 0);
+    const pcts = Array.from({ length: n }, (_, i) => Number(s[`p${i}`]) || 0);
+    const team = scrambleHandicap(hcps, pcts);
+    const sorted = [...hcps].sort((a, b) => a - b);
+    const gross = Number(s.gross) || 0;
+    return {
+      headline: `Team handicap <em>${team}</em>`,
+      sub: gross ? `Net score ${gross - team}` : undefined,
+      lines: sorted.map((h, i) => ({ label: `${h} × ${pcts[i]}%`, value: ((h * pcts[i]) / 100).toFixed(2) })),
+    };
+  });
+</script>

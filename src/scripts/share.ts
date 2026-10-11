@@ -58,13 +58,19 @@ export function drawReceipt(v: View): HTMLCanvasElement {
   }
   if (v.lines.length > rows.length) { ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = '500 30px system-ui'; ctx.fillText(`+${v.lines.length - rows.length} more`, 80, y + 40); }
 
-  ctx.fillStyle = '#e8c874'; ctx.fillRect(0, H - 150, W, 150);
-  ctx.fillStyle = '#0c3b23';
-  ctx.font = '800 40px -apple-system, system-ui, sans-serif';
-  ctx.fillText('Scored with RoundRival', 80, H - 82);
-  ctx.font = '600 30px -apple-system, system-ui, sans-serif';
-  ctx.fillText(SITE_URL.replace('https://', ''), 80, H - 38);
-  return c;
+  // Crop to the content (never shorter than a square), then add the gold footer.
+  const h = Math.max(1080, Math.min(H, y + 110 + 150));
+  const out = document.createElement('canvas');
+  out.width = W; out.height = h;
+  const o = out.getContext('2d')!;
+  o.drawImage(c, 0, 0);
+  o.fillStyle = '#e8c874'; o.fillRect(0, h - 150, W, 150);
+  o.fillStyle = '#0c3b23';
+  o.font = '800 40px -apple-system, system-ui, sans-serif';
+  o.fillText('Scored with RoundRival', 80, h - 82);
+  o.font = '600 30px -apple-system, system-ui, sans-serif';
+  o.fillText(SITE_URL.replace('https://', ''), 80, h - 38);
+  return out;
 }
 
 export async function shareReceipt(v: View) {

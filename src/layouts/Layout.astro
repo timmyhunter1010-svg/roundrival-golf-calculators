@@ -6,7 +6,7 @@ interface Props { title: string; description: string; path: string; page: string
 const { title, description, path, page, faq = [] } = Astro.props;
 const canonical = SITE_URL + path;
 const ogImage = SITE_URL + '/og.png';
-const faqLd = faq.length && JSON.stringify({
+const faqLd = faq.length > 0 && JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),

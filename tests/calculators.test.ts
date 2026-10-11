@@ -3,7 +3,6 @@ import { courseHandicap, playingHandicap, offTheLow, strokesOnHole } from '../sr
 import { settle, money } from '../src/lib/settle';
 import { scoreSkins } from '../src/lib/skins';
 import { scoreNassau } from '../src/lib/nassau';
-import { pressScenarios, originalIsDead } from '../src/lib/press';
 import { scoreWolf } from '../src/lib/wolf';
 import { scrambleHandicap, rankTeams } from '../src/lib/scramble';
 
@@ -95,53 +94,32 @@ describe('skins', () => {
 
 describe('nassau', () => {
   const allFour = Array(18).fill(4);
-  const stakes = { front: 10, back: 10, overall: 10 };
-  const base = { handicaps: [0, 0] as [number, number], strokeIndex: SI18, net: false, stakes, manualPresses: [] };
+  const stakes = { front: 10, back: 20, overall: 30 };
+  const base = { handicaps: [0, 0] as [number, number], strokeIndex: SI18, net: false, stakes };
 
-  it('2 up after 2, auto-press then halved', () => {
+  it('wins front, halves back, wins overall', () => {
     const b = [5, 5, ...Array(16).fill(4)];
-    const r = scoreNassau({ ...base, scores: [allFour, b], autoPress: true });
-    expect(r.bets.map((x) => [x.label, x.result])).toEqual([
-      ['Front 9', 10], ['Front 9 press 1 (from 3)', 0], ['Back 9', 0], ['Overall', 10],
+    const r = scoreNassau({ ...base, scores: [allFour, b] });
+    expect(r.bets.map((x) => [x.label, x.status, x.result])).toEqual([
+      ['Front 9', 2, 10], ['Back 9', 0, 0], ['Overall', 2, 30],
     ]);
-    expect(r.totals).toEqual([20, -20]);
+    expect(r.totals).toEqual([40, -40]);
   });
-  it('presses on presses', () => {
-    const a = [4, 4, 5, 5, 5, 5, 4, 4, 4, ...Array(9).fill(4)];
-    const b = [5, 5, 4, 4, 4, 4, 4, 4, 4, ...Array(9).fill(4)];
-    const r = scoreNassau({ ...base, scores: [a, b], autoPress: true });
-    const front = r.bets.filter((x) => x.label.startsWith('Front'));
-    expect(front.map((x) => [x.start, x.status])).toEqual([[1, -2], [3, -4], [5, -2], [7, 0]]);
-    expect(r.totals[0]).toBe(-30 + 0 - 10);
+  it('split nines: lose front, win back by more, win overall', () => {
+    const a = [5, ...Array(8).fill(4), 3, 3, ...Array(7).fill(4)];
+    const r = scoreNassau({ ...base, scores: [a, allFour] });
+    expect(r.bets.map((x) => x.result)).toEqual([-10, 20, 30]);
+    expect(r.totals[0]).toBe(40);
   });
-  it('manual press, no auto', () => {
-    const b = [5, 5, ...Array(16).fill(4)];
-    const a = [...Array(12).fill(4), 3, ...Array(5).fill(4)];
-    const r = scoreNassau({ ...base, scores: [a, b], autoPress: false, manualPresses: [12] });
-    expect(r.bets.find((x) => x.label.includes('from 12'))?.result).toBe(10);
-    expect(r.totals[0]).toBe(10 + 10 + 10 + 10);
+  it('all square overall is a push', () => {
+    const a = [5, ...Array(9).fill(4), 3, ...Array(7).fill(4)];
+    const r = scoreNassau({ ...base, scores: [a, allFour] });
+    expect(r.bets.map((x) => x.result)).toEqual([-10, 20, 0]);
   });
   it('net strokes off the low', () => {
     const b = [5, ...Array(17).fill(4)]; // 5 on SI 1 with a stroke is a halve
-    const r = scoreNassau({ ...base, handicaps: [8, 9], net: true, scores: [allFour, b], autoPress: false });
+    const r = scoreNassau({ ...base, handicaps: [8, 9], net: true, scores: [allFour, b] });
     expect(r.totals).toEqual([0, 0]);
-  });
-});
-
-describe('press', () => {
-  it('2 down with 6 to play', () => {
-    expect(pressScenarios({ stake: 10, pressStake: 10, down: 2, holesLeft: 6 })).toEqual([
-      { label: 'Win the rest by 3+', amount: 20 },
-      { label: 'Win the rest by 2', amount: 10 },
-      { label: 'Win the rest by 1', amount: 0 },
-      { label: 'Halve the rest', amount: -10 },
-      { label: 'Lose the rest', amount: -20 },
-    ]);
-  });
-  it('dead original', () => {
-    expect(originalIsDead(4, 3)).toBe(true);
-    const r = pressScenarios({ stake: 10, pressStake: 10, down: 4, holesLeft: 3 });
-    expect(r[0]).toEqual({ label: 'Win the rest by 1–3', amount: 0 });
   });
 });
 
@@ -164,6 +142,14 @@ describe('wolf', () => {
     const r = scoreWolf({ ...base, handicaps: [0, 0, 0], scores: [[4, 4], [4, 5], [5, 5]], holes: [{ wolf: 0, pick: 'lone' }, { wolf: 1, pick: 2 }] });
     expect(r.holes[0].winner).toBe('tie');
     expect(r.points).toEqual([2, -1, -1]); // hole 2: wolf side (1,2) loses to 0
+  });
+});
+
+describe('wolf skipped holes', () => {
+  it('no pick: hole does not count', () => {
+    const r = scoreWolf({ handicaps: [0, 0, 0], strokeIndex: [1], net: false, pointValue: 1, loneMult: 2, blindMult: 3, scores: [[3], [5], [5]], holes: [{ wolf: 0, pick: null }] });
+    expect(r.holes[0].winner).toBe('skipped');
+    expect(r.points).toEqual([0, 0, 0]);
   });
 });
 

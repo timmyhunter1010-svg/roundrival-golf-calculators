@@ -1,0 +1,56 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RoundFlow from '../components/RoundFlow.astro';
+import HcpSettings from '../components/HcpSettings.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'What is a Nassau?', a: 'Three matches in one round: the front 9, the back 9, and the full 18. Each is played hole by hole, and each has its own amount.' },
+  { q: 'Who wins each match?', a: 'Whoever wins more holes in that nine (or the full 18). Halved holes don’t count. If it’s even, that match is a push.' },
+  { q: 'How do handicaps work in a Nassau?', a: 'Play off the low: the lower handicap plays at zero and the other player gets the difference, one stroke per hole starting with the hardest holes.' },
+];
+---
+<Layout title="Golf Nassau Calculator (with Handicaps) | RoundRival" description="Free golf Nassau calculator: front 9, back 9, and overall with handicaps. See who owes who after 18." path="/nassau-calculator" page="nassau" faq={faq}>
+  <h1>Golf Nassau Calculator</h1>
+  <p class="lede">Front. Back. Overall.</p>
+
+  <RoundFlow page="nassau">
+    <div class="row"><label for="front">Front 9</label><span class="money">$<input id="front" name="front" inputmode="decimal" value="10" /></span></div>
+    <div class="row"><label for="back">Back 9</label><span class="money">$<input id="back" name="back" inputmode="decimal" value="10" /></span></div>
+    <div class="row"><label for="overall">Overall</label><span class="money">$<input id="overall" name="overall" inputmode="decimal" value="10" /></span></div>
+    <HcpSettings holes={false} />
+  </RoundFlow>
+
+  <Faq items={faq} />
+  <CrossLinks page="nassau" />
+</Layout>
+
+<script>
+  import { mountRound, nameOf } from '../scripts/round';
+  import { settleView } from '../scripts/results';
+  import { scoreNassau } from '../lib/nassau';
+  import { money } from '../lib/settle';
+
+  mountRound({
+    min: 2, max: 2, start: 2, fixedHoles: 18,
+    compute(r, s, hcps) {
+      const names = [nameOf(r, 0), nameOf(r, 1)];
+      const res = scoreNassau({
+        scores: [r.scores[0], r.scores[1]], handicaps: [hcps[0], hcps[1]], strokeIndex: r.si,
+        net: s.scoring === 'net',
+        stakes: { front: Number(s.front) || 0, back: Number(s.back) || 0, overall: Number(s.overall) || 0 },
+      });
+      const v = settleView(names, res.totals);
+      const status = (x: number) => (x === 0 ? 'All square' : `${names[x > 0 ? 0 : 1]} ${Math.abs(x)} up`);
+      return {
+        ...v,
+        sub: undefined,
+        lines: res.bets.map((b) => ({
+          label: `${b.label} · ${status(b.status)}`,
+          value: b.result === 0 ? 'Push' : `${names[b.result > 0 ? 0 : 1]} ${money(b.result)}`,
+        })),
+      };
+    },
+  });
+</script>
