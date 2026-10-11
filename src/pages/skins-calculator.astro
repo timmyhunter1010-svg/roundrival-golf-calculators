@@ -1,0 +1,50 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RoundFlow from '../components/RoundFlow.astro';
+import HcpSettings from '../components/HcpSettings.astro';
+import Faq from '../components/Faq.astro';
+import CrossLinks from '../components/CrossLinks.astro';
+
+const faq = [
+  { q: 'What is a skin?', a: 'Each hole is worth one skin. The lowest score on the hole wins it. If two or more players tie for low, nobody wins it.' },
+  { q: 'How do carryovers work?', a: 'With carryovers on, a tied hole rolls its skin into the next hole, so the next outright winner takes them all. Skins still tied after the last hole go unclaimed.' },
+  { q: 'Net or gross skins?', a: 'Gross uses actual scores. Net subtracts handicap strokes first, so higher handicaps can win holes too.' },
+  { q: 'How are handicap strokes given?', a: 'Strokes go on the hardest holes first, using each hole’s handicap (stroke index) from the scorecard. A 5 handicap gets a stroke on the five hardest holes. Plus handicaps give strokes back on the easiest holes.' },
+  { q: 'How is the settle-up worked out?', a: 'Every other player pays the winner the skin value for each skin won. The calculator nets it all out into the fewest payments.' },
+];
+---
+<Layout title="Golf Skins Calculator (with Handicaps) | RoundRival" description="Free golf skins calculator. Gross or net skins, carryovers, and who owes who in seconds. No sign-up." path="/skins-calculator" page="skins" faq={faq}>
+  <h1>Golf Skins Calculator</h1>
+  <p class="lede">Net or gross. Carryovers. Who owes who.</p>
+
+  <RoundFlow page="skins">
+    <div class="row"><label for="value">Per skin</label><span class="money">$<input id="value" name="value" inputmode="decimal" value="5" /></span></div>
+    <div class="row"><label for="carry">Carryovers</label><span class="switch"><input type="checkbox" id="carry" name="carry" checked /><span></span></span></div>
+    <div class="row"><label for="validate">Par or better to win</label><span class="switch"><input type="checkbox" id="validate" name="validate" /><span></span></span></div>
+    <HcpSettings />
+  </RoundFlow>
+
+  <Faq items={faq} />
+  <CrossLinks page="skins" />
+</Layout>
+
+<script>
+  import { mountRound, nameOf } from '../scripts/round';
+  import { settleView } from '../scripts/results';
+  import { scoreSkins } from '../lib/skins';
+
+  mountRound({
+    min: 2, max: 8, start: 3,
+    compute(r, s, hcps) {
+      const value = Number(s.value) || 0;
+      const res = scoreSkins({
+        scores: r.scores, handicaps: hcps, strokeIndex: r.si, par: r.par,
+        net: s.scoring === 'net', carryovers: !!s.carry, validate: !!s.validate, value,
+      });
+      const names = r.players.map((_, i) => nameOf(r, i));
+      const v = settleView(names, res.totals);
+      v.lines = names.map((n, i) => ({ ...v.lines[i], label: `${n} · ${res.skinsWon[i]} skin${res.skinsWon[i] === 1 ? '' : 's'}` }));
+      return { ...v, note: res.unclaimed ? `${res.unclaimed} skin${res.unclaimed > 1 ? 's' : ''} still tied at the end.` : undefined };
+    },
+  });
+</script>

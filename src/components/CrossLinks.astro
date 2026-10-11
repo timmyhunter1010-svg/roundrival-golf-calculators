@@ -1,0 +1,10 @@
+---
+import { CALCS } from '../config';
+interface Props { page: string }
+const { page } = Astro.props;
+---
+<nav class="cross" aria-label="Other calculators">
+  {CALCS.filter((c) => c.key !== page).map((c) => (
+    <a class="btn btn-soft" href={`/${c.slug}`}>{c.tab} →</a>
+  ))}
+</nav>

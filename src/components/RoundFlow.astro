@@ -1,0 +1,47 @@
+---
+import AppCard from './AppCard.astro';
+interface Props { page: string; minLabel?: string }
+const { page } = Astro.props;
+---
+<section id="flow">
+  <div class="dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+  <div class="step card">
+    <p class="steplabel">1 · Players</p>
+    <div id="players"></div>
+    <div class="actions" style="margin-top:6px">
+      <button type="button" class="link" id="addp">+ Add player</button>
+      <button type="button" class="link" id="remp" style="margin-left:auto">Remove</button>
+    </div>
+    <div class="actions"><button type="button" class="btn btn-primary" data-go="1">Next</button></div>
+  </div>
+
+  <div class="step card">
+    <p class="steplabel">2 · Game</p>
+    <form id="game" onsubmit="return false"><slot /></form>
+    <div class="actions">
+      <button type="button" class="btn btn-soft" data-go="0">Back</button>
+      <button type="button" class="btn btn-primary" data-go="2">Enter scores</button>
+    </div>
+  </div>
+
+  <div class="step card">
+    <p class="steplabel">3 · Scores</p>
+    <div id="hole"></div>
+  </div>
+
+  <div class="step">
+    <div class="card">
+      <p class="steplabel">Result</p>
+      <div id="result" aria-live="polite"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="share">Share receipt</button>
+      </div>
+      <div class="actions" style="margin-top:4px">
+        <button type="button" class="link" id="edit">Edit scores</button>
+        <button type="button" class="link" id="again" style="margin-left:auto">New round</button>
+      </div>
+    </div>
+    <AppCard page={page} />
+  </div>
+</section>

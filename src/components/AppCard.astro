@@ -1,0 +1,20 @@
+---
+import QRCode from 'qrcode';
+import { ctaUrl, CTA_LABEL } from '../config';
+interface Props { page: string }
+const { page } = Astro.props;
+const href = ctaUrl(page, 'result');
+const qr = await QRCode.toString(ctaUrl(page, 'qr'), { type: 'svg', margin: 0, color: { dark: '#0c3b23', light: '#ffffff' } });
+---
+<aside class="appcard" aria-label="RoundRival app">
+  <div>
+    <h3>Next round, use <span>RoundRival</span>.</h3>
+    <ul>
+      <li>Live scoring on the course</li>
+      <li>Every game, auto-tallied</li>
+      <li>Your rivals, saved</li>
+    </ul>
+    <a class="btn btn-gold" href={href} data-cta="result">{CTA_LABEL}</a>
+  </div>
+  <div class="qr"><Fragment set:html={qr} />Scan on iPhone</div>
+</aside>

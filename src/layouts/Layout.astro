@@ -1,0 +1,74 @@
+---
+import '../styles/global.css';
+import { SITE_URL, APP_STORE_ID, PLAUSIBLE_DOMAIN, CALCS, CTA_LABEL, CTA_TAGLINE, ctaUrl } from '../config';
+
+interface Props { title: string; description: string; path: string; page: string; faq?: { q: string; a: string }[] }
+const { title, description, path, page, faq = [] } = Astro.props;
+const canonical = SITE_URL + path;
+const ogImage = SITE_URL + '/og.png';
+const faqLd = faq.length && JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+});
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#0c3b23" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="RoundRival" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {APP_STORE_ID && <meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />}
+    {faqLd && <script type="application/ld+json" set:html={faqLd} />}
+    {PLAUSIBLE_DOMAIN && <script defer data-domain={PLAUSIBLE_DOMAIN} src="https://plausible.io/js/script.js" />}
+  </head>
+  <body data-page={page}>
+    <header class="top">
+      <div class="wrap">
+        <div class="brand">
+          <a class="logo" href="/"><i></i>RoundRival <small>Calculators</small></a>
+        </div>
+        <nav class="tabs" aria-label="Calculators">
+          {CALCS.map((c) => (
+            <a href={`/${c.slug}`} aria-current={page === c.key ? 'page' : undefined}>{c.tab}</a>
+          ))}
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <slot />
+      <footer class="foot">
+        <p>For friendly scorekeeping between friends. Nothing is paid or held here. Handicap rules vary by group.</p>
+        <p><a href="/">All calculators</a> · <a href={ctaUrl(page, 'footer')} data-cta="footer">RoundRival</a></p>
+      </footer>
+    </main>
+
+    <div class="ctabar">
+      <div class="wrap">
+        <p><b>RoundRival</b>{CTA_TAGLINE}</p>
+        <a class="btn btn-gold" href={ctaUrl(page, 'sticky')} data-cta="sticky">{CTA_LABEL}</a>
+      </div>
+    </div>
+
+    <script>
+      import { track } from '../scripts/track';
+      document.addEventListener('click', (e) => {
+        const a = (e.target as HTMLElement).closest<HTMLElement>('[data-cta]');
+        if (a) track('Main Button Clicked', { spot: a.dataset.cta! });
+      });
+    </script>
+  </body>
+</html>

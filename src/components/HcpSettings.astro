@@ -1,0 +1,33 @@
+---
+// Net/gross, holes, and the optional Handicap Index conversion. Used on every round calculator.
+interface Props { holes?: boolean; lowToggle?: boolean; net?: boolean }
+const { holes = true, lowToggle = false, net = true } = Astro.props;
+---
+{holes && (
+  <div class="row"><span class="lbl">Holes</span>
+    <div class="seg" data-seg><input type="hidden" name="holes" value="18" />
+      <button type="button" value="9">9</button><button type="button" value="18">18</button></div>
+  </div>
+)}
+<div class="row"><span class="lbl">Scoring</span>
+  <div class="seg" data-seg><input type="hidden" name="scoring" id="scoring" value={net ? 'net' : 'gross'} />
+    <button type="button" value="gross">Gross</button><button type="button" value="net">Net</button></div>
+</div>
+<div data-reveal="scoring" data-when="net">
+  {lowToggle && (
+    <div class="row"><label for="low">Off the low</label><span class="switch"><input type="checkbox" id="low" name="low" checked /><span></span></span></div>
+  )}
+  <details class="more">
+    <summary>Handicap options</summary>
+    <div class="row"><span class="lbl">Entered as</span>
+      <div class="seg" data-seg><input type="hidden" name="hcpType" id="hcpType" value="course" />
+        <button type="button" value="course">Course</button><button type="button" value="index">Index</button></div>
+    </div>
+    <div data-reveal="hcpType" data-when="index">
+      <div class="row"><label for="slope">Slope</label><input class="num" id="slope" name="slope" type="number" inputmode="numeric" value="113" min="55" max="155" /></div>
+      <div class="row"><label for="rating">Course rating</label><input class="num" id="rating" name="rating" type="number" inputmode="decimal" step="0.1" value="72.0" /></div>
+      <div class="row"><label for="coursePar">Par</label><input class="num" id="coursePar" name="coursePar" type="number" inputmode="numeric" value="72" /></div>
+    </div>
+    <div class="row"><label for="allowance">Allowance %</label><input class="num" id="allowance" name="allowance" type="number" inputmode="numeric" value="100" min="0" max="100" /></div>
+  </details>
+</div>
