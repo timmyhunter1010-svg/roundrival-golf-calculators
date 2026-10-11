@@ -163,3 +163,46 @@ describe('scramble', () => {
     expect(r.map((t) => [t.name, t.net])).toEqual([['A', 60], ['B', 61]]);
   });
 });
+
+import { parseCourse, layoutHoles } from '../src/lib/course';
+
+describe('course scorecards', () => {
+  const pebble = {
+    id: 'x', course_name: 'Pebble Beach Golf Links', city: 'Pebble Beach', state: 'CA', par: 72,
+    tees: [{ tee_name: 'Blue', gender: 'Male', course_rating: 74.9, slope: 144, par: 72 }, { tee_name: 'Junk', slope: null }],
+    holes_data: [4, 5, 4, 4, 3, 5, 3, 4, 4, 4, 4, 3, 4, 5, 4, 4, 3, 5].map((par, i) => ({
+      number: i + 1, par, handicap_index: [6, 10, 12, 16, 14, 2, 18, 4, 8, 3, 5, 17, 7, 1, 13, 11, 15, 9][i],
+    })).reverse(),
+  };
+  it('reads par, hole handicaps, and tees', () => {
+    const c = parseCourse(pebble);
+    expect(c.name).toBe('Pebble Beach Golf Links');
+    expect(c.place).toBe('Pebble Beach, CA');
+    expect(c.par!.slice(0, 3)).toEqual([4, 5, 4]);
+    expect(c.si!.slice(0, 3)).toEqual([6, 10, 12]);
+    expect(c.par!.reduce((a, b) => a + b)).toBe(72);
+    expect(c.tees).toEqual([{ name: 'Blue', gender: 'Male', rating: 74.9, slope: 144, par: 72 }]);
+  });
+  it('no scorecard → null; par but bad handicaps → par only', () => {
+    expect(parseCourse({ id: 'y', course_name: 'Z' }).par).toBeNull();
+    const c = parseCourse({ id: 'y', holes_data: pebble.holes_data.map((h) => ({ ...h, handicap_index: null })) });
+    expect(c.par).not.toBeNull();
+    expect(c.si).toBeNull();
+  });
+  it('front and back nine', () => {
+    const c = parseCourse(pebble);
+    expect(layoutHoles(c, 'back')).toMatchObject({ start: 9, par: [4, 4, 3, 4, 5, 4, 4, 3, 5] });
+    expect(layoutHoles(c, 'front').si).toEqual([6, 10, 12, 16, 14, 2, 18, 4, 8]);
+  });
+  it('9-hole course played as 18 goes around twice', () => {
+    const l = layoutHoles({ par: [4, 4, 3, 5, 4, 4, 3, 4, 5], si: [1, 3, 5, 7, 9, 11, 13, 15, 17] }, '18');
+    expect(l.par).toHaveLength(18);
+    expect(l.si.slice(0, 3)).toEqual([1, 3, 5]);
+    expect(l.si.slice(9, 12)).toEqual([2, 4, 6]);
+    expect(layoutHoles({ par: [4, 4, 3, 5, 4, 4, 3, 4, 5], si: [1, 3, 5, 7, 9, 11, 13, 15, 17] }, 'front').si).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+  it('no course: standard layout', () => {
+    expect(layoutHoles(null, '18').par).toHaveLength(18);
+    expect(layoutHoles(null, 'back').start).toBe(9);
+  });
+});

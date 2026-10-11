@@ -6,7 +6,7 @@ const { holes = true, lowToggle = false, net = true } = Astro.props;
 {holes && (
   <div class="row"><span class="lbl">Holes</span>
     <div class="seg" data-seg><input type="hidden" name="holes" value="18" />
-      <button type="button" value="9">9</button><button type="button" value="18">18</button></div>
+      <button type="button" value="18">18</button><button type="button" value="front">Front 9</button><button type="button" value="back">Back 9</button></div>
   </div>
 )}
 <div class="row"><span class="lbl">Scoring</span>
@@ -24,6 +24,7 @@ const { holes = true, lowToggle = false, net = true } = Astro.props;
         <button type="button" value="course">Course</button><button type="button" value="index">Index</button></div>
     </div>
     <div data-reveal="hcpType" data-when="index">
+      <div class="chips" id="ctees" aria-label="Tees"></div>
       <div class="row"><label for="slope">Slope</label><input class="num" id="slope" name="slope" type="number" inputmode="numeric" value="113" min="55" max="155" /></div>
       <div class="row"><label for="rating">Course rating</label><input class="num" id="rating" name="rating" type="number" inputmode="decimal" step="0.1" value="72.0" /></div>
       <div class="row"><label for="coursePar">Par</label><input class="num" id="coursePar" name="coursePar" type="number" inputmode="numeric" value="72" /></div>

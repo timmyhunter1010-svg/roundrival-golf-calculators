@@ -15,6 +15,7 @@
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font);
@@ -165,3 +166,23 @@ h2 { font-size: 24px; letter-spacing: -.02em; margin: 0 0 14px; }
 .foot { margin: 40px 0 24px; font-size: 13px; color: var(--muted); }
 .foot a { color: var(--muted); }
 :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* Course search */
+.course { padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.csearch { display: flex; align-items: center; gap: 10px; background: var(--green-50); border-radius: 16px; padding: 0 14px; height: var(--tap); color: var(--green-800); }
+.csearch svg { width: 20px; height: 20px; flex: 0 0 auto; }
+.csearch input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font-size: 17px; font-weight: 600; height: 100%; -webkit-appearance: none; }
+.csearch input::placeholder { color: #8a948d; font-weight: 500; }
+.cres { list-style: none; margin: 6px 0 0; padding: 0; }
+.cres:empty { display: none; }
+.cres button { width: 100%; text-align: left; border: 0; background: transparent; padding: 12px 4px; border-bottom: 1px solid var(--line); display: block; }
+.cres button b { display: block; font-weight: 650; }
+.cres button span, .cres .msg { color: var(--muted); font-size: 14px; }
+.cres .msg { padding: 12px 4px; }
+.cpicked { padding-top: 4px; }
+.cname { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cname b { display: block; font-size: 19px; letter-spacing: -.01em; color: var(--green-900); }
+.cname span { color: var(--muted); font-size: 14px; }
+.chip small { opacity: .7; font-weight: 500; margin-left: 4px; }
+.attrib { font-size: 11px; color: #9aa29c; margin: 8px 0 0; }
+.attrib a { color: inherit; }

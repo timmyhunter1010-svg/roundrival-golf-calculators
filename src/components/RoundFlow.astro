@@ -1,5 +1,6 @@
 ---
 import AppCard from './AppCard.astro';
+import CoursePicker from './CoursePicker.astro';
 interface Props { page: string; minLabel?: string }
 const { page } = Astro.props;
 ---
@@ -18,7 +19,7 @@ const { page } = Astro.props;
 
   <div class="step card">
     <p class="steplabel">2 · Game</p>
-    <form id="game" onsubmit="return false"><slot /></form>
+    <form id="game" onsubmit="return false"><CoursePicker /><slot /></form>
     <div class="actions">
       <button type="button" class="btn btn-soft" data-go="0">Back</button>
       <button type="button" class="btn btn-primary" data-go="2">Enter scores</button>

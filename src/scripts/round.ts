@@ -1,11 +1,13 @@
 // Step-by-step flow shared by the hole-by-hole calculators:
 // Players → Game → Scores → Result. Nothing is stored; it all lives in this page.
-import { DEFAULT_PAR_18, DEFAULT_SI_18, courseHandicap, playingHandicap } from '../lib/handicap';
+import { courseHandicap, playingHandicap } from '../lib/handicap';
+import { layoutHoles, type Course, type HoleMode } from '../lib/course';
+import { mountCoursePicker } from './coursePicker';
 import { track } from './track';
 import { shareReceipt } from './share';
 
 export interface Player { name: string; hcp: number }
-export interface Round { players: Player[]; holes: number; par: number[]; si: number[]; scores: number[][]; hole: number; touched: boolean[] }
+export interface Round { players: Player[]; holes: number; par: number[]; si: number[]; scores: number[][]; hole: number; touched: boolean[]; start: number; key: string }
 export type Settings = Record<string, string | number | boolean>;
 export interface Line { label: string; value: string; tone?: 'pos' | 'neg' }
 export interface View { headline: string; sub?: string; lines: Line[]; note?: string }
@@ -85,8 +87,10 @@ export function mountRound(o: Options) {
   const form = $<HTMLFormElement>('#game');
   const r: Round = {
     players: Array.from({ length: o.start }, () => ({ name: '', hcp: 0 })),
-    holes: o.fixedHoles ?? 18, par: [], si: [], scores: [], hole: 0, touched: [],
+    holes: 18, par: [], si: [], scores: [], hole: 0, touched: [], start: 0, key: '',
   };
+  let course: Course | null = null;
+  mountCoursePicker(form, (c) => { course = c; });
   let step = 0;
   let view: View | null = null;
   initSegs(form);
@@ -138,15 +142,14 @@ export function mountRound(o: Options) {
   // ---------- Holes ----------
   const setupHoles = () => {
     const s = readSettings(form);
-    const n = o.fixedHoles ?? (Number(s.holes) || 18);
-    if (n !== r.holes || r.par.length !== n) {
-      r.holes = n;
-      r.par = DEFAULT_PAR_18.slice(0, n);
-      r.si = DEFAULT_SI_18.slice(0, n);
-      r.touched = Array(n).fill(false);
-      r.hole = 0;
+    const mode = (o.fixedHoles ? '18' : String(s.holes || '18')) as HoleMode;
+    const key = `${course?.id ?? ''}|${mode}`;
+    if (key !== r.key) {
+      const l = layoutHoles(course, mode);
+      Object.assign(r, { key, par: l.par, si: l.si, start: l.start, holes: l.par.length, hole: 0, scores: [] });
+      r.touched = Array(r.holes).fill(false);
     }
-    r.scores = r.players.map((_, p) => Array.from({ length: n }, (_, h) => r.scores[p]?.[h] ?? r.par[h]));
+    r.scores = r.players.map((_, p) => Array.from({ length: r.holes }, (_, h) => r.scores[p]?.[h] ?? r.par[h]));
   };
 
   const holeEl = $('#hole');
@@ -155,7 +158,7 @@ export function mountRound(o: Options) {
     const last = h === r.holes - 1;
     holeEl.innerHTML = `
       <div class="holehead">
-        <div class="holeno">${h + 1}<small> / ${r.holes}</small></div>
+        <div class="holeno">${r.start + h + 1}<small> ${r.holes === 9 ? `· ${h + 1} of 9` : '/ 18'}</small></div>
         <div class="holemeta">
           <div><div class="cap">Par</div><div class="stepper sm"><button type="button" data-meta="par" data-d="-1" aria-label="Lower par">−</button><span class="val">${r.par[h]}</span><button type="button" data-meta="par" data-d="1" aria-label="Raise par">+</button></div></div>
           <div><div class="cap">Hcp</div><div class="stepper sm"><button type="button" data-meta="si" data-d="-1" aria-label="Lower hole handicap">−</button><span class="val">${r.si[h]}</span><button type="button" data-meta="si" data-d="1" aria-label="Raise hole handicap">+</button></div></div>
@@ -201,7 +204,7 @@ export function mountRound(o: Options) {
   };
   $('#share').addEventListener('click', () => { if (view) { track('Share Tapped'); shareReceipt(view); } });
   $('#edit').addEventListener('click', () => { r.hole = 0; go(2); });
-  $('#again').addEventListener('click', () => { r.scores = []; r.par = []; r.hole = 0; go(0); });
+  $('#again').addEventListener('click', () => { r.scores = []; r.key = ''; r.hole = 0; go(0); });
 
   root.querySelectorAll<HTMLButtonElement>('[data-go]').forEach((b) => b.addEventListener('click', () => {
     const n = +b.dataset.go!;
