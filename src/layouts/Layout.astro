@@ -6,6 +6,11 @@ interface Props { title: string; description: string; path: string; page: string
 const { title, description, path, page, faq = [] } = Astro.props;
 const canonical = SITE_URL + path;
 const ogImage = SITE_URL + '/og.png';
+// Tells Google the site's name and logo.
+const siteLd = JSON.stringify([
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'RoundRival Golf Calculators', alternateName: 'RoundRival', url: SITE_URL + '/' },
+  { '@context': 'https://schema.org', '@type': 'Organization', name: 'RoundRival', url: 'https://roundrival.com', logo: SITE_URL + '/icon-512.png' },
+]);
 const faqLd = faq.length > 0 && JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -21,8 +26,11 @@ const faqLd = faq.length > 0 && JSON.stringify({
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#0c3b23" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96" />
+    <link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json" set:html={siteLd} />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="RoundRival" />
     <meta property="og:title" content={title} />
@@ -38,7 +46,7 @@ const faqLd = faq.length > 0 && JSON.stringify({
     <header class="top">
       <div class="wrap">
         <div class="brand">
-          <a class="logo" href="/"><i></i>RoundRival <small>Calculators</small></a>
+          <a class="logo" href="/"><img src="/favicon-96.png" alt="" width="26" height="26" />RoundRival <small>Calculators</small></a>
           <a class="navlink" href="/how-to-play">How to play</a>
         </div>
         <nav class="tabs" aria-label="Calculators">
